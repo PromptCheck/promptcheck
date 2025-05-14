@@ -1,0 +1,42 @@
+name: 'EvalLoop Action'
+description: 'Runs EvalLoop to evaluate LLM outputs in your CI/CD pipeline.'
+author: 'Your Name/Org Here'
+
+inputs:
+  test_path:
+    description: 'Path to test files or directory containing test files (e.g., tests/, tests/specific_suite.yaml). Defaults to an internal example if not provided for demo.'
+    required: false
+    default: 'tests/basic_example.yaml' # Default to the example we created
+  config_dir:
+    description: 'Directory containing the evalloop.config.yaml file.'
+    required: false
+    default: '.'
+  output_dir:
+    description: 'Directory where the run.json artifact should be saved within the action runner.'
+    required: false
+    default: 'evalloop-results'
+  github_token:
+    description: 'GitHub token for posting PR comments (if feature enabled). Not used by core run.'
+    required: false
+    default: ${{ github.token }} # Default to the action's own token
+
+outputs:
+  run_json_path:
+    description: 'Path to the generated run.json file within the output_dir.'
+  # We can add more outputs like number of tests passed/failed later
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile' # Assumes Dockerfile is in the root of the repository
+  # We will pass inputs as environment variables to the Docker container for simplicity
+  # The Docker entrypoint or CMD will then pick these up.
+  # Alternatively, a custom entrypoint script can parse them.
+  # For now, we'll construct the command directly.
+  # The command needs to be run via poetry run evalloop ...
+  # We need to ensure that the workspace is correctly mounted and paths are relative to it.
+  # GITHUB_WORKSPACE is the default working directory for the action.
+
+# Branding (optional)
+branding:
+  icon: 'check-circle' # Choose an icon from https://feathericons.com/
+  color: 'green'

@@ -1,0 +1,44 @@
+name: EvalLoop Self-Test
+
+on:
+  push:
+    branches:
+      - main # Or your default branch
+  pull_request:
+    branches:
+      - main # Or your default branch
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  run_evalloop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run EvalLoop Action
+        id: evalloop_run
+        uses: ./ # Uses the action in the current repository
+        with:
+          test_path: 'tests/basic_example.yaml' # Path to your test file(s)
+          config_dir: '.'                   # Directory of your evalloop.config.yaml
+          output_dir: 'evalloop-action-results' # Directory to store results within the action
+        # You might need to provide an OPENROUTER_API_KEY if your basic_example.yaml requires it
+        # and it's not in a committed evalloop.config.yaml (which it shouldn't be for secrets).
+        # env:
+        #   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }} # If using repo secrets
+
+      - name: Upload EvalLoop Results
+        if: always() # Run even if previous steps fail, to upload partial results or logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: evalloop-results-artifact
+          path: evalloop-action-results/ # Path to the directory specified in output_dir
+          if-no-files-found: warn # 'error', 'warn', or 'ignore' (default error)
+
+      - name: Print run.json path (for debugging)
+        if: always()
+        run: |
+          echo "Path to run.json from action output: ${{ steps.evalloop_run.outputs.run_json_path }}"
+          echo "Listing contents of output directory:"
+          ls -R evalloop-action-results/ 

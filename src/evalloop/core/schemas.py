@@ -23,6 +23,8 @@ class MetricConfig(BaseModel):
 class ModelConfigParameters(BaseModel):
     temperature: Optional[float] = Field(None, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(None, gt=0)
+    timeout_s: Optional[float] = Field(None, gt=0, description="Timeout for the API call in seconds.")
+    retry_attempts: Optional[int] = Field(None, ge=0, le=5, description="Number of retry attempts for the API call.")
     # Add other common model parameters here or allow arbitrary through extra
     # For now, let's allow any other parameters
     class Config:

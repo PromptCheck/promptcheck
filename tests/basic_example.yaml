@@ -1,0 +1,42 @@
+- id: "openrouter_greet_test_001"
+  name: "OpenRouter Basic Greeting Test"
+  description: "Tests a basic greeting prompt using a free model on OpenRouter (Mistral 7B Instruct)."
+  type: "llm_generation"
+
+  input_data:
+    prompt: "Briefly introduce yourself and greet the user."
+
+  expected_output:
+    # For a free-form generation, exact_match is too strict.
+    # We might use a regex to check for keywords or a semantic similarity metric later.
+    # For now, we'll just check if we get *any* response.
+    # A human would review the actual output for quality.
+    # To make this test pass automatically for now, we can add a lenient regex.
+    regex_pattern: ".+" # Matches any non-empty string. Crude, but makes the test pass.
+
+  metric_configs:
+    - metric: "regex_match" 
+      # No threshold needed if we just want to see if it ran and matched the loose regex.
+    - metric: "token_count"
+      parameters:
+        count_types: ["completion", "total"]
+    - metric: "latency"
+      threshold:
+        value: 10000 # Allow up to 10 seconds for free tier models
+    - metric: "cost" 
+      # Cost should be very low or zero for free models on OpenRouter if reported by header.
+      # No threshold here, just observe.
+
+  model_config:
+    provider: "openrouter"
+    # Using a commonly available free-tier model. User needs OPENROUTER_API_KEY in env or config.
+    model_name: "mistralai/mistral-7b-instruct"
+    parameters:
+      temperature: 0.7
+      max_tokens: 50
+      # Add a default timeout to ensure it doesn't hang indefinitely on a free model
+      timeout_s: 25.0 
+      # Add a default retry for robustness with potentially rate-limited free models
+      retry_attempts: 2
+
+  tags: ["openrouter", "free_model", "basic_example", "greeting"] 
