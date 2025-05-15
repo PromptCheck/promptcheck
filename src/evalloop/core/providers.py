@@ -66,13 +66,18 @@ class LLMProvider(ABC):
 
     def make_llm_call(
         self,
-        test_case_name: str, # For logging/context
+        test_case_name: str, 
         prompt: str,
-        resolved_model_config: ModelConfig, # Already resolved from global and test-specific configs
-        # We pass the full ModelConfig in case provider needs more than just parameters
+        resolved_model_config: ModelConfig, 
     ) -> LLMResponse:
         """
-        Makes a call to the LLM provider.
+        Makes a call to the LLM provider, handling retries and timeouts.
+
+        Retries are performed using an exponential backoff strategy. The number of
+        attempts and the timeout for each attempt can be configured:
+        1. Via `parameters.retry_attempts` and `parameters.timeout_s` in the `resolved_model_config` for the test case.
+        2. Via `default_model.parameters.retry_attempts` and `default_model.parameters.timeout_s` in `evalloop.config.yaml`.
+        3. Defaults to `DEFAULT_RETRY_ATTEMPTS` (currently 3) and `DEFAULT_TIMEOUT_SECONDS` (currently 30.0s) if not specified.
 
         Args:
             test_case_name: The name of the test case for logging/context.
@@ -149,13 +154,11 @@ class LLMProvider(ABC):
 
     def _get_retry_decorator(self, max_attempts: int):
         """ Returns a tenacity retry decorator. Subclasses can override for specific error types."""
-        # Generic transient errors for OpenAI and Groq. Add others if needed.
         transient_errors = (OpenAIError, GroqError, openai.APITimeoutError, openai.APIConnectionError, openai.RateLimitError, openai.APIStatusError)
         return retry(
             stop=stop_after_attempt(max_attempts),
-            wait=wait_exponential(multiplier=1, min=2, max=10), # Exponential backoff: 2s, 4s, 8s, then 10s for subsequent
+            wait=wait_exponential(multiplier=1, min=1, max=10), # Changed min to 1 for 1s minimum backoff
             retry=retry_if_exception_type(transient_errors),
-            # before_sleep=before_sleep_log(logger, logging.DEBUG) # Optional: log retries
         )
 
     def get_effective_model_parameters(self, test_model_config: ModelConfig) -> Dict[str, Any]:
@@ -197,6 +200,10 @@ class OpenAIProvider(LLMProvider):
         self, client: openai.OpenAI, prompt_messages: List[Dict[str,str]], 
         model_to_call: str, effective_params: Dict[str, Any], timeout: float
     ) -> LLMResponse:
+        """
+        Executes a single attempt of an OpenAI ChatCompletion call.
+        This method is intended to be wrapped by the retry logic in the base LLMProvider.
+        """
         start_time = time.time()
         params_for_call = effective_params.copy()
         params_for_call.pop('timeout_s', None) # Remove timeout_s if it exists
@@ -245,6 +252,10 @@ class GroqProvider(LLMProvider):
         self, client: groq.Groq, prompt_messages: List[Dict[str,str]], 
         model_to_call: str, effective_params: Dict[str, Any], timeout: float
     ) -> LLMResponse:
+        """
+        Executes a single attempt of a Groq ChatCompletion call.
+        This method is intended to be wrapped by the retry logic in the base LLMProvider.
+        """
         start_time = time.time()
         params_for_call = effective_params.copy()
         params_for_call.pop('timeout_s', None) # Remove timeout_s if it exists
@@ -297,6 +308,10 @@ class OpenRouterProvider(LLMProvider):
         self, client: openai.OpenAI, prompt_messages: List[Dict[str,str]], 
         model_to_call: str, effective_params: Dict[str, Any], timeout: float
     ) -> LLMResponse:
+        """
+        Executes a single attempt of an OpenRouter ChatCompletion call using the OpenAI client.
+        This method is intended to be wrapped by the retry logic in the base LLMProvider.
+        """
         start_time = time.time()
         params_for_call = effective_params.copy()
         params_for_call.pop('timeout_s', None) # Remove timeout_s if it exists
