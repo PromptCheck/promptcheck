@@ -7,9 +7,8 @@ set -e # Exit immediately if a command exits with a non-zero status.
 
 echo "Starting EvalLoop Action..."
 
-# Construct the evalloop command
-# Ensure the 'run' subcommand is included
-CMD="poetry run evalloop run"
+# Ensure the 'run' subcommand is included and disable virtualenv creation for this run
+CMD="POETRY_VIRTUALENVS_CREATE=false poetry run evalloop run"
 
 # Config directory for the 'run' subcommand
 if [ -n "$INPUT_CONFIG_DIR" ]; then
