@@ -41,11 +41,12 @@ jobs:
             -e INPUT_CONFIG_DIR='${{ inputs.config_dir || '.' }}' \
             -e INPUT_OUTPUT_DIR='${{ inputs.output_dir || 'evalloop-action-results' }}' \
             -e OPENROUTER_API_KEY='${{ secrets.OPENROUTER_API_KEY }}' \
-            -e GITHUB_OUTPUT='${{ steps.evalloop_run.outputs.run_json_path }}' \
             evalloop-action
-            # The GITHUB_OUTPUT redirect inside docker run is tricky and might not work as intended for job outputs.
-            # The entrypoint.sh is responsible for writing to $GITHUB_OUTPUT for action outputs.
-            # We need to ensure entrypoint.sh correctly receives and uses $GITHUB_OUTPUT path.
+            # GITHUB_OUTPUT is automatically available to the script executed by ENTRYPOINT
+            # if the action is structured for it. In a custom docker run, it's inherited by the docker run command's env,
+            # but not necessarily passed into the container unless explicitly done with -e for the *container*.
+            # However, the standard mechanism is that the entrypoint.sh itself will have GITHUB_OUTPUT in its env
+            # because it IS the action's main script.
 
       - name: Upload EvalLoop Results
         if: always() 
