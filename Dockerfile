@@ -4,50 +4,27 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Install evalloop from TestPyPI, allowing fallback to PyPI for dependencies
-RUN pip install --index-url https://test.pypi.org/simple/ \
+# Install evalloop from TestPyPI and its dependencies
+RUN pip install --no-cache-dir --index-url https://test.pypi.org/simple/ \
     --extra-index-url https://pypi.org/simple \
     evalloop==0.0.1a0
 
-# The playbook suggests a fixed entrypoint for testing the published package.
-# Our actual action uses entrypoint.sh to parse inputs.
-# For now, to match the playbook's intent for this *specific test of TestPyPI install*,
-# we use its suggested entrypoint. We will revert/adapt this later.
-# The action.yml still defines inputs, but this fixed entrypoint won't use them.
-ENTRYPOINT ["evalloop", "run", "tests/basic_example.yaml"]
+# Install Poetry, as entrypoint.sh uses `poetry run`
+RUN pip install --no-cache-dir poetry==1.8.3
+# Configure Poetry to use the system Python where evalloop is now installed
+RUN poetry config virtualenvs.create false
 
-# To make this Dockerfile work with the existing action.yml which passes inputs,
-# and to make the action still use its flexible entrypoint.sh, we should actually
-# just modify the installation part and keep our existing entrypoint.sh logic.
-
-# Corrected approach: Modify existing Dockerfile to pip install from TestPyPI,
-# but keep the rest of our Dockerfile structure (Poetry, entrypoint.sh) for the full action functionality.
-
-# Let's re-evaluate. The playbook's Dockerfile is *very* minimal and changes the entrypoint.
-# This is okay for a *temporary test* to see if the action can *pull the wheel*.
-
-# For this step, let's use the playbook's Dockerfile VERBATIM to test the TestPyPI package install and basic run.
-# We will need to adjust it back afterwards for full action functionality.
-
-# Install poetry
-RUN pip install poetry==1.8.3 # Pinning poetry version for reproducibility in Docker
-
-# Copy files required by Poetry to build/install the project and its dependencies
-COPY pyproject.toml poetry.lock /app/
-COPY src/ /app/src/
-COPY tests/ /app/tests/
+# Copy the entrypoint script for the action
 COPY entrypoint.sh /app/entrypoint.sh
-COPY README.md /app/README.md
-COPY LICENSE /app/LICENSE
-
-# Configure Poetry to not create virtualenvs, then install
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi --no-dev
-
-# Make the entrypoint executable
 RUN chmod +x /app/entrypoint.sh
 
-# Set the entrypoint
+# The action.yml defines inputs that entrypoint.sh uses.
+# test_path and config_dir are relative to GITHUB_WORKSPACE which is /app here.
+# The entrypoint.sh will need access to test files and potentially a config file from the repo.
+# These are available in GITHUB_WORKSPACE on the runner, which is mounted into /app by default for Docker actions.
+# However, our entrypoint.sh expects test_path and config_dir to be resolved correctly.
+# The `evalloop` command installed by pip will be on the PATH.
+
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 # The command `evalloop` should be available on the PATH after `poetry install` 

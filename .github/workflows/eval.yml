@@ -3,85 +3,84 @@ name: EvalLoop Self-Test
 on:
   push:
     branches:
-      - main # Or your default branch
+      - main
   pull_request:
     branches:
-      - main # Or your default branch
-  workflow_dispatch: # Allows manual triggering
+      - main
+  workflow_dispatch:
 
 jobs:
-  # Original job - disabling for now to test TestPyPI separately
-  # run_evalloop:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Run EvalLoop Action 
-  #       id: evalloop_run
-  #       uses: ./ # Uses the action in the current repository
-  #       env:
-  #         DOCKER_BUILDKIT: 0 # Attempt to influence docker build if uses: ./ respects it for its own build step.
-  #         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-  #       with:
-  #         test_path: 'tests/basic_example.yaml'
-  #         config_dir: '.'
-  #         output_dir: 'evalloop-action-results'
-  #
-  #     - name: Upload EvalLoop Results
-  #       if: always() 
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: evalloop-results-artifact
-  #         path: evalloop-action-results/ # This path is inside the runner, where docker run might create it.
-  #         if-no-files-found: warn 
-  #
-  #     - name: Print run.json path (for debugging)
-  #       if: always()
-  #       run: |
-  #         echo "Path to run.json from action output: ${{ steps.evalloop_run.outputs.run_json_path }}"
-  #         echo "Listing contents of output directory:"
-  #         ls -R evalloop-action-results/
-
-  test_pypi_package:
-    name: Test EvalLoop from TestPyPI
+  run_evalloop: # Re-enabled original job
+    name: EvalLoop Action Test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository code (for test files and example config)
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build and Run Package from TestPyPI
+      # "List context" step can remain removed or be re-added if further debugging is needed
+
+      - name: Run EvalLoop Action 
+        id: evalloop_run
+        uses: ./ 
         env:
+          DOCKER_BUILDKIT: 0 # Kept for now to ensure build stability with main Dockerfile
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        with:
+          test_path: 'tests/basic_example.yaml'
+          config_dir: '.' # This implies evalloop.config.yaml is in the root of GITHUB_WORKSPACE
+          output_dir: 'evalloop-action-results'
+
+      - name: Upload EvalLoop Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evalloop-results-artifact
+          path: evalloop-action-results/
+          if-no-files-found: warn
+
+      - name: Print run.json path (for debugging)
+        if: always()
         run: |
-          echo "Preparing config file for test run..."
-          if [ -f evalloop.config.yaml.example ]; then
-            cp evalloop.config.yaml.example evalloop.config.yaml
-            echo "Copied evalloop.config.yaml.example to evalloop.config.yaml"
-            # At this point, evalloop.config.yaml has placeholder keys.
-            # The application should prefer the OPENROUTER_API_KEY env var.
-          else
-            echo "Warning: evalloop.config.yaml.example not found!"
-            # Create a minimal one if it's absolutely required by the app to exist, even if keys come from env
-            echo "api_keys:" > evalloop.config.yaml
-            echo "  openrouter: YOUR_KEY_FROM_ENV" >> evalloop.config.yaml
-          fi
+          echo "Path to run.json from action output: ${{ steps.evalloop_run.outputs.run_json_path }}"
+          echo "Listing contents of output directory:"
+          # ls -R evalloop-action-results/ # This might fail if dir not created due to prior error
+          if [ -d "evalloop-action-results" ]; then ls -R evalloop-action-results/; else echo "output dir not found"; fi
 
-          echo "FROM python:3.11-slim" > Dockerfile.testpypi
-          echo "RUN pip install --no-cache-dir --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple evalloop==0.0.1a0" >> Dockerfile.testpypi
-          echo "WORKDIR /github/workspace" >> Dockerfile.testpypi
-          echo "COPY evalloop.config.yaml /github/workspace/evalloop.config.yaml" >> Dockerfile.testpypi
-          echo "COPY tests /github/workspace/tests" >> Dockerfile.testpypi
-          echo "ENTRYPOINT [\"evalloop\", \"run\", \"--config\", \"evalloop.config.yaml\", \"tests/basic_example.yaml\"]" >> Dockerfile.testpypi
-
-          echo "--- Generated Dockerfile.testpypi --- "
-          cat Dockerfile.testpypi
-          echo "------------------------------------"
-          
-          DOCKER_BUILDKIT=0 docker build -t evalloop-testpypi-img -f Dockerfile.testpypi .
-          
-          echo "Running the container..."
-          # No volume mounts needed if files are COPYied into the image by Dockerfile.testpypi
-          docker run --rm \
-            -e OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
-            evalloop-testpypi-img 
+  # test_pypi_package: # Temporary job removed
+  #   name: Test EvalLoop from TestPyPI
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository code (for test files and example config)
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Build and Run Package from TestPyPI
+  #       env:
+  #         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  #       run: |
+  #         echo "Preparing config file for test run..."
+  #         if [ -f evalloop.config.yaml.example ]; then
+  #           cp evalloop.config.yaml.example evalloop.config.yaml
+  #           echo "Copied evalloop.config.yaml.example to evalloop.config.yaml"
+  #         else
+  #           echo "Warning: evalloop.config.yaml.example not found!"
+  #           echo "api_keys:" > evalloop.config.yaml
+  #           echo "  openrouter: YOUR_KEY_FROM_ENV" >> evalloop.config.yaml
+  #         fi
+  #
+  #         echo "FROM python:3.11-slim" > Dockerfile.testpypi
+  #         echo "RUN pip install --no-cache-dir --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple evalloop==0.0.1a0" >> Dockerfile.testpypi
+  #         echo "WORKDIR /github/workspace" >> Dockerfile.testpypi
+  #         echo "COPY evalloop.config.yaml /github/workspace/evalloop.config.yaml" >> Dockerfile.testpypi
+  #         echo "COPY tests /github/workspace/tests" >> Dockerfile.testpypi
+  #         echo "ENTRYPOINT [\"evalloop\", \"run\", \"--config\", \"evalloop.config.yaml\", \"tests/basic_example.yaml\"]" >> Dockerfile.testpypi
+  #
+  #         echo "--- Generated Dockerfile.testpypi --- "
+  #         cat Dockerfile.testpypi
+  #         echo "------------------------------------"
+  #         
+  #         DOCKER_BUILDKIT=0 docker build -t evalloop-testpypi-img -f Dockerfile.testpypi .
+  #         
+  #         echo "Running the container..."
+  #         docker run --rm \
+  #           -e OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
+  #           evalloop-testpypi-img 
