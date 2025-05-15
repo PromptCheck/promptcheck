@@ -10,34 +10,68 @@ on:
   workflow_dispatch: # Allows manual triggering
 
 jobs:
-  run_evalloop:
+  # Original job - disabling for now to test TestPyPI separately
+  # run_evalloop:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Run EvalLoop Action 
+  #       id: evalloop_run
+  #       uses: ./ # Uses the action in the current repository
+  #       env:
+  #         DOCKER_BUILDKIT: 0 # Attempt to influence docker build if uses: ./ respects it for its own build step.
+  #         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  #       with:
+  #         test_path: 'tests/basic_example.yaml'
+  #         config_dir: '.'
+  #         output_dir: 'evalloop-action-results'
+  #
+  #     - name: Upload EvalLoop Results
+  #       if: always() 
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: evalloop-results-artifact
+  #         path: evalloop-action-results/ # This path is inside the runner, where docker run might create it.
+  #         if-no-files-found: warn 
+  #
+  #     - name: Print run.json path (for debugging)
+  #       if: always()
+  #       run: |
+  #         echo "Path to run.json from action output: ${{ steps.evalloop_run.outputs.run_json_path }}"
+  #         echo "Listing contents of output directory:"
+  #         ls -R evalloop-action-results/
+
+  test_pypi_package:
+    name: Test EvalLoop from TestPyPI
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository code (for test files)
         uses: actions/checkout@v4
 
-      - name: Run EvalLoop Action 
-        id: evalloop_run
-        uses: ./ # Uses the action in the current repository
+      - name: Build and Run Package from TestPyPI
         env:
-          DOCKER_BUILDKIT: 0 # Attempt to influence docker build if uses: ./ respects it for its own build step.
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        with:
-          test_path: 'tests/basic_example.yaml'
-          config_dir: '.'
-          output_dir: 'evalloop-action-results'
-
-      - name: Upload EvalLoop Results
-        if: always() 
-        uses: actions/upload-artifact@v4
-        with:
-          name: evalloop-results-artifact
-          path: evalloop-action-results/ # This path is inside the runner, where docker run might create it.
-          if-no-files-found: warn 
-
-      - name: Print run.json path (for debugging)
-        if: always()
+          # DOCKER_BUILDKIT: 0 # Ensured in the command below
         run: |
-          echo "Path to run.json from action output: ${{ steps.evalloop_run.outputs.run_json_path }}"
-          echo "Listing contents of output directory:"
-          ls -R evalloop-action-results/ 
+          echo "FROM python:3.11-slim" > Dockerfile.testpypi
+          echo "RUN pip install --no-cache-dir --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple evalloop==0.0.1a0" >> Dockerfile.testpypi
+          echo "WORKDIR /github/workspace" >> Dockerfile.testpypi
+          echo "ENTRYPOINT [\"evalloop\", \"run\", \"tests/basic_example.yaml\"]" >> Dockerfile.testpypi
+
+          echo "--- Generated Dockerfile.testpypi --- "
+          cat Dockerfile.testpypi
+          echo "------------------------------------"
+          echo "Current directory: $(pwd)"
+          echo "Listing ./: " && ls -a .
+          echo "Listing ./tests: " && ls -a ./tests
+
+          DOCKER_BUILDKIT=0 docker build -t evalloop-testpypi-img -f Dockerfile.testpypi .
+          
+          echo "Running the container..."
+          docker run --rm \
+            -v "${{ github.workspace }}/tests:/github/workspace/tests" \
+            -v "${{ github.workspace }}/evalloop.config.yaml:/github/workspace/evalloop.config.yaml" \
+            -e OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
+            evalloop-testpypi-img 
