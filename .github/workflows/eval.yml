@@ -26,25 +26,34 @@ jobs:
           echo "Listing tests contents:"
           ls -ARlhp ./tests || echo "tests directory not found or empty"
 
-      - name: Run EvalLoop Action
+      - name: Build Docker image (BuildKit disabled for clearer errors)
+        env:
+          DOCKER_BUILDKIT: 0 # Disable BuildKit
+        run: docker build --tag evalloop-action --file Dockerfile .
+
+      - name: Run EvalLoop via Docker (custom)
         id: evalloop_run
-        uses: ./ # Uses the action in the current repository
-        with:
-          test_path: 'tests/basic_example.yaml' # Path to your test file(s)
-          config_dir: '.'                   # Directory of your evalloop.config.yaml
-          output_dir: 'evalloop-action-results' # Directory to store results within the action
-        # You might need to provide an OPENROUTER_API_KEY if your basic_example.yaml requires it
-        # and it's not in a committed evalloop.config.yaml (which it shouldn't be for secrets).
-        # env:
-        #   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }} # If using repo secrets
+        run: |
+          docker run --name evallooprunner \
+            --workdir /github/workspace \
+            -v "${{ github.workspace }}":/github/workspace \
+            -e INPUT_TEST_PATH='${{ inputs.test_path || 'tests/basic_example.yaml' }}' \
+            -e INPUT_CONFIG_DIR='${{ inputs.config_dir || '.' }}' \
+            -e INPUT_OUTPUT_DIR='${{ inputs.output_dir || 'evalloop-action-results' }}' \
+            -e OPENROUTER_API_KEY='${{ secrets.OPENROUTER_API_KEY }}' \
+            -e GITHUB_OUTPUT='${{ steps.evalloop_run.outputs.run_json_path }}' \
+            evalloop-action
+            # The GITHUB_OUTPUT redirect inside docker run is tricky and might not work as intended for job outputs.
+            # The entrypoint.sh is responsible for writing to $GITHUB_OUTPUT for action outputs.
+            # We need to ensure entrypoint.sh correctly receives and uses $GITHUB_OUTPUT path.
 
       - name: Upload EvalLoop Results
-        if: always() # Run even if previous steps fail, to upload partial results or logs
+        if: always() 
         uses: actions/upload-artifact@v4
         with:
           name: evalloop-results-artifact
-          path: evalloop-action-results/ # Path to the directory specified in output_dir
-          if-no-files-found: warn # 'error', 'warn', or 'ignore' (default error)
+          path: evalloop-action-results/ # This path is inside the runner, where docker run might create it.
+          if-no-files-found: warn 
 
       - name: Print run.json path (for debugging)
         if: always()
