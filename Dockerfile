@@ -15,9 +15,9 @@ COPY entrypoint.sh /app/entrypoint.sh
 COPY README.md /app/README.md
 COPY LICENSE /app/LICENSE
 
-# Install project dependencies AND the project itself
-# This should happen after all necessary source code is copied
-RUN poetry install --no-interaction --no-ansi --no-dev
+# Configure Poetry to not create virtualenvs, then install
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-interaction --no-ansi --no-dev
 
 # Make the entrypoint executable
 RUN chmod +x /app/entrypoint.sh
