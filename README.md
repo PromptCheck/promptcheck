@@ -7,3 +7,9 @@
 |           |                                      | (Note: For advanced NLTK tokenization, e.g., `punkt`, users may need to download data separately. See NLTK docs.) |
 | Action    | Docker container (`python:slim`)     | Consistent env             |
 # ... (rest of the table and file) 
+
+--- 
+
+*End of Document – keep this file as the project's living reference; version & timestamp changes at top on each major edit.*
+
+<!-- Workflow debug trigger --> 
