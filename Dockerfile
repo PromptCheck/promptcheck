@@ -4,6 +4,31 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
+# Install evalloop from TestPyPI, allowing fallback to PyPI for dependencies
+RUN pip install --index-url https://test.pypi.org/simple/ \
+    --extra-index-url https://pypi.org/simple \
+    evalloop==0.0.1a0
+
+# The playbook suggests a fixed entrypoint for testing the published package.
+# Our actual action uses entrypoint.sh to parse inputs.
+# For now, to match the playbook's intent for this *specific test of TestPyPI install*,
+# we use its suggested entrypoint. We will revert/adapt this later.
+# The action.yml still defines inputs, but this fixed entrypoint won't use them.
+ENTRYPOINT ["evalloop", "run", "tests/basic_example.yaml"]
+
+# To make this Dockerfile work with the existing action.yml which passes inputs,
+# and to make the action still use its flexible entrypoint.sh, we should actually
+# just modify the installation part and keep our existing entrypoint.sh logic.
+
+# Corrected approach: Modify existing Dockerfile to pip install from TestPyPI,
+# but keep the rest of our Dockerfile structure (Poetry, entrypoint.sh) for the full action functionality.
+
+# Let's re-evaluate. The playbook's Dockerfile is *very* minimal and changes the entrypoint.
+# This is okay for a *temporary test* to see if the action can *pull the wheel*.
+
+# For this step, let's use the playbook's Dockerfile VERBATIM to test the TestPyPI package install and basic run.
+# We will need to adjust it back afterwards for full action functionality.
+
 # Install poetry
 RUN pip install poetry==1.8.3 # Pinning poetry version for reproducibility in Docker
 
