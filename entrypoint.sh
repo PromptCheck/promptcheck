@@ -84,6 +84,20 @@ fi
 # This logic for finding the run.json file should ideally be more robust or handled by evalloop CLI providing the exact path.
 RUN_JSON_FILES=$(find "$OUTPUT_DIR_PARAM" -name 'evalloop_run_*.json' -print -quit) 
 
+# DEBUGGING GITHUB_OUTPUT
+echo "DEBUG: Value of GITHUB_OUTPUT is [$GITHUB_OUTPUT]"
+if [ -n "$GITHUB_OUTPUT" ]; then
+  OUTPUT_DIR_OF_GITHUB_OUTPUT=$(dirname "$GITHUB_OUTPUT")
+  echo "DEBUG: Directory of GITHUB_OUTPUT is [$OUTPUT_DIR_OF_GITHUB_OUTPUT]"
+  echo "DEBUG: Listing contents of GITHUB_OUTPUT parent dir:"
+  ls -la "$OUTPUT_DIR_OF_GITHUB_OUTPUT" || echo "DEBUG: Failed to list GITHUB_OUTPUT parent dir"
+  echo "DEBUG: Checking if GITHUB_OUTPUT file itself exists:"
+  ls -la "$GITHUB_OUTPUT" || echo "DEBUG: GITHUB_OUTPUT file does not exist"
+else
+  echo "DEBUG: GITHUB_OUTPUT is not set or is empty."
+fi
+# END DEBUGGING
+
 if [ -n "$RUN_JSON_FILES" ]; then
   echo "Found run.json: $RUN_JSON_FILES"
   echo "run_json_path=$RUN_JSON_FILES" >> "$GITHUB_OUTPUT"
