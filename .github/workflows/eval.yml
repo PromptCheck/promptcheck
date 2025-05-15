@@ -16,16 +16,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: List context before Docker build
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Listing contents:"
-          ls -ARlhp .
-          echo "Listing src contents:"
-          ls -ARlhp ./src || echo "src directory not found or empty"
-          echo "Listing tests contents:"
-          ls -ARlhp ./tests || echo "tests directory not found or empty"
-
       - name: Run EvalLoop Action 
         id: evalloop_run
         uses: ./ # Uses the action in the current repository
