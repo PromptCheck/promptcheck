@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional, Union
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, RootModel
 
 class MetricThreshold(BaseModel):
     # Flexible to allow different kinds of thresholds, e.g., f_score for rouge, value for latency
@@ -52,57 +52,21 @@ class TestCase(BaseModel):
     name: str
     description: Optional[str] = None
     type: str = "llm_generation"
-    input_data: InputData = Field(..., alias="input") # Allow 'input' as an alias for input_data
-    expected_output: ExpectedOutput = Field(..., alias="expected") # Allow 'expected' as an alias
-    metric_configs: List[MetricConfig] = Field(..., alias="metrics") # Allow 'metrics' as an alias
-    model_config: ModelConfig = Field(default_factory=ModelConfig, alias="model") # Allow 'model' as an alias
+    input_data: InputData
+    expected_output: ExpectedOutput
+    metric_configs: List[MetricConfig]
+    case_model_config: Optional[ModelConfig] = Field(None, alias="model_config")
     tags: Optional[List[str]] = None
 
-    @validator('input_data', pre=True, always=True)
-    def _check_input_alias(cls, v, values):
-        if isinstance(v, dict) and 'input' in v and 'input_data' not in v: # Handle if alias is used
-             return v['input']
-        if 'input' in values and 'input_data' not in values : # top level alias check
-            return values['input']
-        return v
-    
-    @validator('expected_output', pre=True, always=True)
-    def _check_expected_alias(cls, v, values):
-        if isinstance(v, dict) and 'expected' in v and 'expected_output' not in v:
-            return v['expected']
-        if 'expected' in values and 'expected_output' not in values:
-             return values['expected']
-        return v
-
-    @validator('metric_configs', pre=True, always=True)
-    def _check_metrics_alias(cls, v, values):
-        if isinstance(v, dict) and 'metrics' in v and 'metric_configs' not in v:
-            return v['metrics']
-        if 'metrics' in values and 'metric_configs' not in values:
-            return values['metrics']
-        return v
-    
-    @validator('model_config', pre=True, always=True)
-    def _check_model_alias(cls, v, values):
-        if isinstance(v, dict) and 'model' in v and 'model_config' not in v:
-            return v['model']
-        if 'model' in values and 'model_config' not in values :
-            return values['model']
-        # If v is None (i.e., model_config is not provided at all), it will be handled by default_factory
-        return v if v is not None else {}
-
-
-class TestFile(BaseModel):
-    __root__: List[TestCase]
-
+class TestFile(RootModel[List[TestCase]]):
     def __iter__(self):
-        return iter(self.__root__)
+        return iter(self.root)
 
     def __getitem__(self, item):
-        return self.__root__[item]
+        return self.root[item]
 
     def __len__(self):
-        return len(self.__root__)
+        return len(self.root)
 
 # Example Usage (for testing this file directly):
 if __name__ == '__main__':
@@ -159,15 +123,15 @@ if __name__ == '__main__':
     ]
 
     try:
-        test_file_obj = TestFile(__root__=sample_yaml_data_list)
+        test_file_obj = TestFile(root=sample_yaml_data_list)
         print("Successfully parsed sample_yaml_data_list:")
         for test_case in test_file_obj:
-            print(test_case.json(indent=2))
+            print(test_case.model_dump_json(indent=2))
 
-        test_file_obj_alias = TestFile(__root__=sample_yaml_data_list_alias)
+        test_file_obj_alias = TestFile(root=sample_yaml_data_list_alias)
         print("\nSuccessfully parsed sample_yaml_data_list_alias:")
         for test_case in test_file_obj_alias:
-            print(test_case.json(indent=2))
+            print(test_case.model_dump_json(indent=2))
             
         # Test case where model_config is not provided at all
         sample_no_model_config = [
@@ -179,12 +143,11 @@ if __name__ == '__main__':
                 "metrics": [{"metric": "exact_match"}]
             }
         ]
-        test_file_no_model_obj = TestFile(__root__=sample_no_model_config)
+        test_file_no_model_obj = TestFile(root=sample_no_model_config)
         print("\nSuccessfully parsed sample_no_model_config:")
         for test_case in test_file_no_model_obj:
-            print(test_case.json(indent=2))
-            assert test_case.model_config.provider == "default" # Check default factory worked
-
+            print(test_case.model_dump_json(indent=2))
+            assert test_case.case_model_config is None 
 
     except Exception as e:
         print(f"Error parsing: {e}")

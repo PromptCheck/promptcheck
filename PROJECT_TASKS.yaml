@@ -28,6 +28,12 @@ phases:
     sub_phases:
       - name: "CLI - `evalloop` (Python + Typer)"
         tasks:
+          - name: "Switch to src/evalloop/ layout."
+            status: "done"
+            notes: "Moved package to src/ and updated pyproject.toml."
+          - name: "Optional-dependency split for NLTK (BLEU metric)."
+            status: "done"
+            notes: "NLTK moved to 'bleu' extra. Metrics code handles optional import."
           - name: "`evalloop init` command"
             sub_tasks:
               - name: "Scaffold example `tests/*.yaml` files."
@@ -103,7 +109,12 @@ phases:
                 status: "to-do"
               - name: "Create real sample test (`tests/basic_example.yaml`) that passes."
                 status: "done"
-                notes: "Uses OpenRouter free tier model."
+                notes: |
+                  Uses OpenRouter free tier model (mistralai/mistral-7b-instruct).
+                  Prerequisite smoke-test from Execution Playbook v0.2 now passes with this test case,
+                  verifying core CLI functionality, config/test loading, OpenRouter integration,
+                  and calculations for regex_match, token_count, latency, and cost metrics.
+                  JSON output also verified.
 
       - name: "GitHub Action (`evalloop/action@v1`)"
         tasks:
@@ -139,51 +150,6 @@ phases:
             status: "to-do"
             notes: "Current .github/workflows/eval.yml serves as an initial self-test/demo."
 
-      - name: "Hosted Dashboard (Beta - FastAPI, Supabase, Next.js)"
-        tasks:
-          - name: "Backend (FastAPI + Supabase/Postgres + Prisma)"
-            sub_tasks:
-              - name: "Set up Supabase project."
-                status: "to-do"
-              - name: "Define database schema (users, projects, runs, results) using Prisma. Run migrations."
-                status: "to-do"
-              - name: "Implement email magic-link authentication (Supabase Auth)."
-                status: "to-do"
-              - name: "API endpoint to ingest `run.json` (secured by API key per project)."
-                status: "to-do"
-              - name: "API endpoints to query runs and results for a project."
-                status: "to-do"
-              - name: "Implement Row-Level Security (RLS) in Supabase."
-                status: "to-do"
-          - name: "Frontend (Next.js + shadcn/ui)"
-            sub_tasks:
-              - name: "Basic project setup."
-                status: "to-do"
-              - name: "User authentication pages (login via magic link)."
-                status: "to-do"
-              - name: "Dashboard page"
-                sub_tasks:
-                  - name: "List projects for the user."
-                    status: "to-do"
-                  - name: "For a selected project, display a list of runs."
-                    status: "to-do"
-                  - name: "For a selected run, display detailed results."
-                    status: "to-do"
-                  - name: "Simple chart: quality (e.g., pass % or avg score) and cost over commits/time."
-                    status: "to-do"
-          - name: "Deployment & Ops"
-            sub_tasks:
-              - name: "Deploy FastAPI backend (e.g., Fly.io, Railway)."
-                status: "to-do"
-              - name: "Deploy Next.js frontend (e.g., Vercel, Fly.io, Railway)."
-                status: "to-do"
-          - name: "Security"
-            sub_tasks:
-              - name: "Ensure HTTPS/TLS for all communications."
-                status: "to-do"
-              - name: "JWT for API authentication."
-                status: "to-do"
-      
       - name: "Docs & Demo (MVP)"
         tasks:
           - name: "Detailed Quickstart in `README.md` for CLI."
@@ -256,8 +222,74 @@ phases:
           - name: "Official logo and branding assets."
             status: "to-do"
 
-  - name: "Future Ideas (Post-V1)"
+  - name: "Future Ideas & Backlog (Post-V1 / Post-MVP)"
+    notes: "Items deferred from initial MVP or planned for later significant versions."
     tasks:
+      - name: "(Stretch MVP) LLM-evaluate hallucination score (e.g., using a separate model)."
+        status: "to-do"
+        original_phase: "Phase 1 - Metric Calculation"
+      - name: "(Stretch MVP) Generate a simple HTML report for `evalloop report`."
+        status: "to-do"
+        original_phase: "Phase 1 - evalloop report command"
+      - name: "(Stretch MVP) Basic landing page for the hosted dashboard."
+        status: "to-do"
+        original_phase: "Phase 1 - Docs & Demo (MVP)"
+      
+      - name: "Async Runner for Concurrent LLM Calls"
+        status: "to-do"
+        notes: "Performance enhancement for `evalloop run`."
+        original_phase: "Future - Performance"
+
+      - name: "Hosted Dashboard (Full Features - Post-Beta)"
+        notes: "All tasks related to the full hosted dashboard beyond a potential beta/stub."
+        # Tasks originally under 'Hosted Dashboard (Beta - FastAPI, Supabase, Next.js)' from Phase 1
+        # can be considered part of this larger future effort if not stubbed for MVP.
+        # For clarity, let's assume the detailed dashboard tasks are for this future phase.
+        sub_phases: 
+          - name: "Backend (FastAPI + Supabase/Postgres + Prisma)"
+            tasks:
+              - name: "Set up Supabase project."
+                status: "to-do"
+              - name: "Define database schema (users, projects, runs, results) using Prisma. Run migrations."
+                status: "to-do"
+              - name: "Implement email magic-link authentication (Supabase Auth)."
+                status: "to-do"
+              - name: "API endpoint to ingest `run.json` (secured by API key per project)."
+                status: "to-do"
+              - name: "API endpoints to query runs and results for a project."
+                status: "to-do"
+              - name: "Implement Row-Level Security (RLS) in Supabase."
+                status: "to-do"
+          - name: "Frontend (Next.js + shadcn/ui)"
+            tasks:
+              - name: "Basic project setup."
+                status: "to-do"
+              - name: "User authentication pages (login via magic link)."
+                status: "to-do"
+              - name: "Dashboard page"
+                sub_tasks:
+                  - name: "List projects for the user."
+                    status: "to-do"
+                  - name: "For a selected project, display a list of runs."
+                    status: "to-do"
+                  - name: "For a selected run, display detailed results."
+                    status: "to-do"
+                  - name: "Simple chart: quality (e.g., pass % or avg score) and cost over commits/time."
+                    status: "to-do"
+          - name: "Deployment & Ops (Dashboard)"
+            tasks:
+              - name: "Deploy FastAPI backend (e.g., Fly.io, Railway)."
+                status: "to-do"
+              - name: "Deploy Next.js frontend (e.g., Vercel, Fly.io, Railway)."
+                status: "to-do"
+          - name: "Security (Dashboard)"
+            tasks:
+              - name: "Ensure HTTPS/TLS for all communications."
+                status: "to-do"
+              - name: "JWT for API authentication."
+                status: "to-do"
+
+      # Other items from original "Future Ideas (Post-V1)" can remain here or be merged
       - name: "FlowLens DevTools Panel."
         status: "to-do"
       - name: "White-label OEM licensing."

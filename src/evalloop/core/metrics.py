@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Union
 from pydantic import BaseModel, Field
 import re # For RegexMatchMetric
 
-from evalloop.core.schemas import TestCase # To access test_case.expected_output
+from evalloop.core.schemas import TestCase, MetricThreshold # Import MetricThreshold
 from evalloop.core.providers import LLMResponse # To access llm_response.text_output
 
 from rouge_score import rouge_scorer, scoring
@@ -27,7 +27,15 @@ class Metric(ABC):
         Initializes the metric with its specific configuration from the test case.
         """
         self.config = metric_config
-        self.threshold_config = metric_config.get('threshold') or metric_config.get('thresholds')
+        raw_threshold_config = metric_config.get('threshold') or metric_config.get('thresholds')
+        if isinstance(raw_threshold_config, dict):
+            try:
+                self.threshold_config: Optional[MetricThreshold] = MetricThreshold(**raw_threshold_config)
+            except Exception as e: # Catch Pydantic validation error or other issues
+                # print(f"Warning: Could not parse threshold config for {self.metric_name}: {e}") # Optional logging
+                self.threshold_config = None # Set to None if parsing fails
+        else:
+            self.threshold_config: Optional[MetricThreshold] = None
 
     @abstractmethod
     def calculate(self, test_case: TestCase, llm_response: LLMResponse) -> MetricResult:
@@ -62,7 +70,7 @@ class Metric(ABC):
         # Assumes higher is worse for 'value' like latency, lower is worse for 'f_score'
         # This logic needs to be robust based on the actual MetricThreshold fields and metric nature.
         
-        threshold_value = self.threshold_config.get('value')
+        threshold_value = self.threshold_config.value
         if threshold_value is not None and isinstance(score, (int, float)):
             # Example: if metric is latency, score <= threshold_value is pass
             # This needs to be defined per metric type (e.g. lower is better for latency)
@@ -472,21 +480,18 @@ class TokenCountMetric(Metric):
 
     def evaluate_thresholds(self, scores: Dict[str, int]) -> Optional[bool]:
         """Override to handle specific threshold logic for token counts."""
-        if not self.threshold_config: # self.threshold_config is from TestCase (MetricThreshold model)
+        if not self.threshold_config: 
             return None
         
-        overall_pass = True # Assume pass unless a threshold fails
+        overall_pass = True 
         threshold_conditions_met = False
 
-        # Example: threshold_config could have `completion_max`
+        # Now self.threshold_config is a MetricThreshold object
         if self.threshold_config.completion_max is not None and "completion_tokens" in scores:
             threshold_conditions_met = True
             if scores["completion_tokens"] > self.threshold_config.completion_max:
                 overall_pass = False
         
-        # Add checks for other potential thresholds like `prompt_max`, `total_max` etc.
-        # if self.threshold_config.prompt_max ...
-
         return overall_pass if threshold_conditions_met else None
 
 # Further expand __main__ for TokenCountMetric tests later if needed.
@@ -571,19 +576,17 @@ class CostMetric(Metric):
 
     def __init__(self, metric_config: Dict[str, Any]):
         super().__init__(metric_config)
-        # Allow overriding pricing data via metric_config parameters if needed later
         self.pricing_data = metric_config.get("parameters", {}).get("pricing_data", DEFAULT_PLACEHOLDER_PRICING)
 
     def calculate(self, test_case: TestCase, llm_response: LLMResponse) -> MetricResult:
         if llm_response.error:
             return MetricResult(
                 metric_name=self.metric_name,
-                score=-1.0, # Indicate error
+                score=-1.0, 
                 passed=False,
                 error=f"Cannot calculate cost due to LLM call error: {llm_response.error}"
             )
 
-        # If cost is already directly provided by LLMResponse (e.g., from OpenRouter header)
         if llm_response.cost is not None:
             cost = llm_response.cost
             passed_status = self.evaluate_thresholds(cost)
@@ -594,27 +597,32 @@ class CostMetric(Metric):
                 details={"unit": "USD", "source": "provider_reported"}
             )
 
-        # Fallback to calculating cost based on token counts and pricing table
         prompt_tokens = llm_response.prompt_tokens
         completion_tokens = llm_response.completion_tokens
         model_name = llm_response.model_name_used
         
-        # Infer provider from test_case model_config or global config if available
-        # This logic assumes test_case.model_config.provider is set correctly
-        provider_name = test_case.model_config.provider
-        if provider_name == "default": # try to get it from global config
-            provider_name = test_case.model_config.provider # This should be test_case.global_config.default_model.provider or similar if passed down
-            # For now, we'll assume if it's default here, it might be in model_name_used for OpenRouter like "openai/gpt-3.5-turbo"
-            if model_name and "/" in model_name and provider_name == "default": # Heuristic for OpenRouter style names
-                provider_name = model_name.split('/')[0]
-            elif provider_name == "default": # If truly unknown after checks
-                 provider_name = "unknown_provider" # or use a general default from pricing table
+        # Access provider via test_case.case_model_config
+        provider_name = "unknown_provider" # Default if not found
+        if test_case.case_model_config: # Check if case_model_config exists
+            provider_name = test_case.case_model_config.provider
+            if provider_name == "default":
+                # This logic to get global default provider from test_case is problematic.
+                # The runner should resolve the actual provider used and pass it, 
+                # or the llm_response.model_name_used should be specific enough (e.g. "openrouter/mistralai...")
+                # For now, if it's default from test case, it implies it should have been resolved by runner.
+                # If model_name_used contains a slash, assume it's like "provider/model"
+                if model_name and "/" in model_name:
+                    provider_name = model_name.split('/')[0]
+                # If still default, it means we couldn't determine it from test case or global config easily here.
+                # Rely on pricing table's general default or provider in model_name_used.
+        elif model_name and "/" in model_name: # Fallback if no case_model_config but model_name suggests provider
+             provider_name = model_name.split('/')[0]
 
         if prompt_tokens is None or completion_tokens is None or model_name is None:
             return MetricResult(
                 metric_name=self.metric_name,
                 score=-1.0,
-                passed=False, # Or None
+                passed=False, 
                 details={"message": "Token counts or model name missing, cannot calculate cost."},
                 error="Incomplete token/model info from provider."
             )
@@ -626,7 +634,7 @@ class CostMetric(Metric):
             return MetricResult(
                 metric_name=self.metric_name,
                 score=-1.0,
-                passed=False, # Or None
+                passed=False, 
                 details={"provider": provider_name, "model": model_name, "message": "Pricing info not found for this model/provider."},
                 error="Pricing not available."
             )

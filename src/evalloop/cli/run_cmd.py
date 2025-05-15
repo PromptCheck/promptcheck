@@ -7,13 +7,13 @@ import json # For writing json
 
 from evalloop.utils.file_handler import load_evalloop_config, ConfigFileLoadError, load_test_cases_from_yaml, TestFileLoadError
 from evalloop.core.runner import execute_eval_run # Import the new runner function
-from evalloop.core.schemas import RunOutput # For type hinting
+from evalloop.core.schemas import RunOutput, TestCase # For type hinting
 
-app = typer.Typer(name="run", help="Run an evaluation suite against your LLM prompts and models.")
+# app = typer.Typer(name="run", help="Run an evaluation suite against your LLM prompts and models.") # REMOVED
 
 DEFAULT_TESTS_DIR = "tests"
 
-@app.command()
+# @app.command() # REMOVED DECORATOR
 def run(
     config_path_cli: Path = typer.Option(
         Path("."), 
@@ -39,8 +39,14 @@ def run(
         writable=True,
         resolve_path=True,
         show_default="Current directory"
+    ),
+    soft_fail: bool = typer.Option(
+        False,
+        "--soft-fail",
+        help="Exit with code 0 even if tests fail (but still report failures). Useful for CI steps that should not block a pipeline.",
+        show_default=False # Explicitly show False as default
     )
-    # TODO: Add more options later, e.g., --tags, --verbose, --soft-fail
+    # TODO: Add more options later, e.g., --tags, --verbose
 ):
     """
     Runs evaluation tests based on the provided configuration and test files.
@@ -60,15 +66,13 @@ def run(
     try:
         config = load_evalloop_config(config_dir)
         typer.echo(f"Loaded configuration from: {config_dir / 'evalloop.config.yaml'}")
-        # Basic config loaded info can be logged by the runner if needed or via a verbose flag
     except ConfigFileLoadError as e:
         typer.secho(f"Error loading configuration: {e}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
     
-    # Gather test files
     actual_test_files: List[Path] = []
     if not test_files_or_dirs:
-        default_dir_path = Path.cwd() / DEFAULT_TESTS_DIR # Use absolute path for default
+        default_dir_path = Path.cwd() / DEFAULT_TESTS_DIR
         if default_dir_path.is_dir():
             typer.echo(f"No specific test files provided, looking in default directory: {default_dir_path.relative_to(Path.cwd())}")
             for pattern in ("*.yaml", "*.yml"):
@@ -87,22 +91,21 @@ def run(
 
     if not actual_test_files:
         typer.secho("No test files found to execute.", fg=typer.colors.YELLOW)
-        raise typer.Exit(code=0) # Not an error, but nothing to do
+        raise typer.Exit(code=0)
 
     typer.echo(f"Found {len(actual_test_files)} test file(s) to process:")
     for tf in actual_test_files:
         typer.echo(f"  - {tf.relative_to(Path.cwd()) if tf.is_absolute() else tf}")
 
-    # Load and process test cases from all files
     all_test_cases: List[TestCase] = []
     for test_file_path in actual_test_files:
         try:
             typer.echo(f"\nLoading test cases from: {test_file_path.name}...")
             test_file_content = load_test_cases_from_yaml(test_file_path)
-            if not test_file_content.__root__:
+            if not test_file_content.root:
                 typer.echo(f"  No test cases found in {test_file_path.name}.")
                 continue
-            all_test_cases.extend(test_file_content.__root__)
+            all_test_cases.extend(test_file_content.root)
             typer.echo(f"  Successfully loaded {len(test_file_content)} test case(s) from {test_file_path.name}.")
         except TestFileLoadError as e:
             typer.secho(f"Error loading test file {test_file_path.name}: {e}\nSkipping this file.", fg=typer.colors.RED)
@@ -114,10 +117,8 @@ def run(
 
     typer.echo(f"\nTotal test cases to execute: {len(all_test_cases)}")
 
-    # Execute the evaluation run using the core runner
     run_output_data: RunOutput = execute_eval_run(config, all_test_cases)
     
-    # Output run.json artifact
     output_dir_cli.mkdir(parents=True, exist_ok=True)
     json_filename = f"evalloop_run_{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
     json_file_path = output_dir_cli / json_filename
@@ -127,10 +128,10 @@ def run(
             json_content = run_output_data.model_dump_json(indent=2)
             f.write(json_content)
         typer.echo(f"\nRun results saved to: {json_file_path}")
-    except AttributeError: # Fallback for Pydantic V1 if model_dump_json not found
+    except AttributeError:
         try:
             with open(json_file_path, "w") as f:
-                json_content = run_output_data.json(indent=2) # Pydantic V1
+                json_content = run_output_data.json(indent=2)
                 f.write(json_content)
             typer.echo(f"\nRun results saved to: {json_file_path} (using Pydantic V1 .json() method)")
         except Exception as e_v1:
@@ -142,16 +143,16 @@ def run(
 
     if run_output_data.total_tests_failed is not None and run_output_data.total_tests_failed > 0:
         typer.secho(f"{run_output_data.total_tests_failed} test(s) failed.", fg=typer.colors.RED)
-        # TODO: Consider --soft-fail option later
-        raise typer.Exit(code=1)
+        if not soft_fail:
+            sys.exit(1)
+        else:
+            typer.echo("Soft fail enabled: Exiting with code 0 despite test failures.")
+            sys.exit(0)
     else:
         typer.secho("All tests executed passed (or had no failing thresholds defined).", fg=typer.colors.GREEN)
+        sys.exit(0)
 
-
-if __name__ == "__main__":
-    # Example of how to run this for local testing:
-    # Ensure you have an evalloop.config.yaml and a tests/ directory with some .yaml files
-    # You might need to `cd` to the project root if you are not already there.
-    # CLI: python evalloop/cli/run_cmd.py 
-    # or if installed: evalloop run 
-    app()
+# if __name__ == "__main__": # This block might need adjustment if direct script execution is needed.
+    # temp_app = typer.Typer()
+    # temp_app.command("run")(run)
+    # temp_app()

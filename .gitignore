@@ -2,37 +2,162 @@
 
 # Python cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
 
 # Distribution / packaging
 .Python
 build/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib60/
+parts/
+sdist/
+var/
+wheels/
 *.egg-info/
+.installed.cfg
 *.egg
+MANIFEST
 
-# Logs
-*.log
+# PyInstaller
+#  Usually these files are created by a PyInstaller bundle one-level above this file.
+#  If you do use PyInstaller, uncomment this section and remove the one-level-above comment.
+#*.manifest
+#*.spec
 
-# macOS specific
-.DS_Store
-__MACOSX/
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
 
-# VS Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# Pytest cache
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
 .pytest_cache/
+.hypothesis/
+pytestdebug.log
+coverage.xml
 
-# MyPy cache
+# Translations
+*.mo
+*.pot
+*.po
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Environments
+.env
+.venv
+venv/
+ENV/
+env/
+ENV.bin/
+ENV.lib/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
 .mypy_cache/
+.dmypy.json
+dmypy.json
 
-# Ruff cache
-.ruff_cache/
-.ipynb_checkpoints/
+# Pyre type checker
+.pyre/
+
+# PEP 582; __pypackages__ directory
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath files
+*.sage.py
+
+# dotenv
+.env
+
+# virtualenv
+.Python
+
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Thumbnails an metadata
+._*
+
+# Emacs
+*~
+#.matlab_key
+
+# Catkin
+.catkin_tools
+
+# Eclipse
+.project
+.pydevproject
+.settings/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# VSCode
+.vscode/
+
+# استانداردها (Standard paths)
+.idea/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# EvalLoop specific
+evaloop.config.yaml
+evaloop_run_*.json

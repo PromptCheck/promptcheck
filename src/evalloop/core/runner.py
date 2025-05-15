@@ -3,14 +3,17 @@ from typing import List, Optional, Tuple
 import typer # For typer.echo and typer.secho, consider passing a logger or callback for output
 import uuid
 import datetime
+import asyncio
 
 from evalloop.utils.file_handler import load_evalloop_config, ConfigFileLoadError, load_test_cases_from_yaml, TestFileLoadError
 from evalloop.core.schemas import (
     EvalLoopConfig, TestCase, MetricOutput, TestCaseOutput, RunOutput,
-    ModelConfig as TestCaseModelConfig # Alias for clarity
+    ModelConfig as TestCaseModelConfig, # Keep this alias for type hint clarity if ModelConfig is also used directly
+    ModelConfig, # Import ModelConfig directly if needed for instantiation
+    ModelConfigParameters
 )
-from evalloop.core.providers import LLMResponse, get_llm_provider
-from evalloop.core.metrics import MetricResult, get_metric_calculator
+from evalloop.core.providers import LLMResponse, get_llm_provider, LLMProvider
+from evalloop.core.metrics import MetricResult, get_metric_calculator, Metric
 
 class EvalLoopRunner:
     def __init__(self, config: EvalLoopConfig):
@@ -22,16 +25,21 @@ class EvalLoopRunner:
             self.provider_cache[provider_name] = get_llm_provider(provider_name, self.global_config)
         return self.provider_cache[provider_name]
 
-    def _resolve_model_config(self, test_case_model_cfg: TestCaseModelConfig) -> TestCaseModelConfig:
-        provider_name_to_use = test_case_model_cfg.provider
-        model_name_to_use = test_case_model_cfg.model_name
+    def _resolve_model_config(self, test_case_model_cfg: Optional[TestCaseModelConfig]) -> TestCaseModelConfig:
+        # If the test case provides no model_config at all, instantiate a default one.
+        current_test_case_model_cfg = test_case_model_cfg if test_case_model_cfg is not None else ModelConfig()
+
+        provider_name_to_use = current_test_case_model_cfg.provider
+        model_name_to_use = current_test_case_model_cfg.model_name
         
         global_default_provider = "openai" # Ultimate fallback if no global default
         global_default_model = "gpt-3.5-turbo" # Ultimate fallback
 
         if self.global_config.default_model:
-            global_default_provider = self.global_config.default_model.provider or global_default_provider
-            global_default_model = self.global_config.default_model.model_name or global_default_model
+            if self.global_config.default_model.provider:
+                global_default_provider = self.global_config.default_model.provider
+            if self.global_config.default_model.model_name:
+                global_default_model = self.global_config.default_model.model_name
 
         if provider_name_to_use == "default":
             provider_name_to_use = global_default_provider
@@ -45,11 +53,11 @@ class EvalLoopRunner:
             base_params_dict = self.global_config.default_model.parameters.model_dump(exclude_none=True)
 
         resolved_params_dict = base_params_dict.copy()
-        if test_case_model_cfg.parameters:
-            test_specific_params_dict = test_case_model_cfg.parameters.model_dump(exclude_none=True)
+        if current_test_case_model_cfg.parameters:
+            test_specific_params_dict = current_test_case_model_cfg.parameters.model_dump(exclude_none=True)
             resolved_params_dict.update(test_specific_params_dict)
         
-        resolved_params = TestCaseModelConfig().parameters.__class__(**resolved_params_dict)
+        resolved_params = ModelConfigParameters(**resolved_params_dict)
 
         return TestCaseModelConfig(
             provider=provider_name_to_use,
@@ -63,7 +71,7 @@ class EvalLoopRunner:
         actual_metric_outputs: List[MetricOutput] = []
         test_case_overall_passed = True # Assume true, set to false on any metric failure
 
-        resolved_test_model_config = self._resolve_model_config(test_case.model_config)
+        resolved_test_model_config = self._resolve_model_config(test_case.case_model_config)
         provider_name_to_use = resolved_test_model_config.provider
         model_name_to_use = resolved_test_model_config.model_name
 

@@ -916,7 +916,10 @@ files = [
 [package.dependencies]
 typing-extensions = ">=4.12.0"
 
+[extras]
+bleu = ["nltk"]
+
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "d5988b02b72f7988d0a358cc5100314a782ff2e2af68343ac16c1033d4d4c284"
+content-hash = "60193944ddd655ec28416fb67e7027b19c105c1862d26113f1977898a31054c9"

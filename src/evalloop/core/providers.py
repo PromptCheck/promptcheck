@@ -198,12 +198,15 @@ class OpenAIProvider(LLMProvider):
         model_to_call: str, effective_params: Dict[str, Any], timeout: float
     ) -> LLMResponse:
         start_time = time.time()
+        params_for_call = effective_params.copy()
+        params_for_call.pop('timeout_s', None) # Remove timeout_s if it exists
+        params_for_call.pop('retry_attempts', None) # Remove retry_attempts if it exists
         try:
             completion = client.chat.completions.create(
                 model=model_to_call,
                 messages=prompt_messages,
                 timeout=timeout, 
-                **effective_params
+                **params_for_call # Use the modified params
             )
             latency_ms = (time.time() - start_time) * 1000
             text_output = completion.choices[0].message.content if completion.choices else None
@@ -218,11 +221,8 @@ class OpenAIProvider(LLMProvider):
                 attempts_made=1 # This will be updated by tenacity if retried
             )
         except OpenAIError as e:
-            # Let tenacity handle retry for these specific errors
             raise e 
         except Exception as e:
-            # For unexpected errors not covered by OpenAIError, wrap them to stop retries by tenacity
-            # Or, if some are transient, add them to OpenAIError types for tenacity
             return LLMResponse(error=f"Unexpected error in OpenAI call: {type(e).__name__} - {e}", model_name_used=model_to_call, attempts_made=1)
 
 class GroqProvider(LLMProvider):
@@ -246,12 +246,15 @@ class GroqProvider(LLMProvider):
         model_to_call: str, effective_params: Dict[str, Any], timeout: float
     ) -> LLMResponse:
         start_time = time.time()
+        params_for_call = effective_params.copy()
+        params_for_call.pop('timeout_s', None) # Remove timeout_s if it exists
+        params_for_call.pop('retry_attempts', None) # Remove retry_attempts if it exists
         try:
             completion = client.chat.completions.create(
                 model=model_to_call,
                 messages=prompt_messages,
                 timeout=timeout,
-                **effective_params
+                **params_for_call # Use the modified params
             )
             latency_ms = (time.time() - start_time) * 1000
             text_output = completion.choices[0].message.content if completion.choices else None
@@ -295,13 +298,15 @@ class OpenRouterProvider(LLMProvider):
         model_to_call: str, effective_params: Dict[str, Any], timeout: float
     ) -> LLMResponse:
         start_time = time.time()
-        # OpenRouter cost is often in headers, so we want the raw response object from client
+        params_for_call = effective_params.copy()
+        params_for_call.pop('timeout_s', None) # Remove timeout_s if it exists
+        params_for_call.pop('retry_attempts', None) # Remove retry_attempts if it exists
         try:
             completion_obj = client.chat.completions.with_raw_response.create(
                 model=model_to_call, 
                 messages=prompt_messages,
                 timeout=timeout,
-                **effective_params
+                **params_for_call # Use the modified params
             )
             completion = completion_obj.parse() # Get the Pydantic model
             latency_ms = (time.time() - start_time) * 1000
@@ -323,7 +328,7 @@ class OpenRouterProvider(LLMProvider):
                 raw_response=completion.model_dump(exclude_none=True),
                 attempts_made=1
             )
-        except OpenAIError as e: # OpenRouter uses OpenAI-compatible error structures
+        except OpenAIError as e:
             raise e
         except Exception as e:
             return LLMResponse(error=f"Unexpected error in OpenRouter call: {type(e).__name__} - {e}", model_name_used=model_to_call, attempts_made=1)

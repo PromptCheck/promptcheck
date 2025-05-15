@@ -2,7 +2,7 @@ import typer
 from typing_extensions import Annotated
 
 from evalloop.cli import init_cmd
-from evalloop.cli import run_cmd # Import the new run command module
+from evalloop.cli.run_cmd import run as run_command_func # Import the run function directly
 
 app = typer.Typer(
     name="evalloop",
@@ -13,7 +13,7 @@ app = typer.Typer(
 
 # Register subcommands
 app.add_typer(init_cmd.app, name="init", help="Initialize EvalLoop configuration and example files.")
-app.add_typer(run_cmd.app, name="run", help="Run an evaluation suite.")
+app.command("run")(run_command_func) # Register the run function as a command
 # app.add_typer(report_cmd.app, name="report", help="Generate a report from evaluation results.") # Placeholder
 
 @app.callback()

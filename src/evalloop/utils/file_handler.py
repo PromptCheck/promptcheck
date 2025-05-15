@@ -50,7 +50,7 @@ def load_test_cases_from_yaml(file_path: Path) -> TestFile:
         raise TestFileLoadError(f"Could not read file: {e}", file_path=file_path)
 
     if raw_data is None: # Handle empty YAML file
-        return TestFile(__root__=[]) # Return an empty list of test cases
+        return TestFile(root=[]) # Use root= for Pydantic V2 RootModel
         
     if not isinstance(raw_data, list):
         raise TestFileLoadError(
@@ -59,7 +59,7 @@ def load_test_cases_from_yaml(file_path: Path) -> TestFile:
         )
 
     try:
-        test_file = TestFile(__root__=raw_data)
+        test_file = TestFile(root=raw_data) # Use root= for Pydantic V2 RootModel
         return test_file
     except ValidationError as e:
         raise TestFileLoadError(
