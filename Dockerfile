@@ -8,21 +8,19 @@ WORKDIR /app
 RUN pip install poetry==1.8.3 # Pinning poetry version for reproducibility in Docker
 
 # Copy files required by Poetry to build/install the project and its dependencies
-COPY pyproject.toml poetry.lock /app/ # Explicitly use WORKDIR path with trailing slash
-COPY src/ ./src/  # Source and destination are directories
+COPY pyproject.toml poetry.lock /app/
+COPY src/ /app/src/
+COPY tests/ /app/tests/
+COPY entrypoint.sh /app/entrypoint.sh
+COPY README.md /app/README.md
+COPY LICENSE /app/LICENSE
 
 # Install project dependencies AND the project itself
-# This layer is cached if pyproject.toml, poetry.lock, and src/ don't change significantly for Poetry
+# This should happen after all necessary source code is copied
 RUN poetry install --no-interaction --no-ansi --no-dev
 
-# Copy other necessary files needed at runtime by the entrypoint or action
-COPY tests/ ./tests/ # Source and destination are directories
-COPY entrypoint.sh ./
-COPY README.md ./
-COPY LICENSE ./
-
 # Make the entrypoint executable
-RUN chmod +x ./entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Set the entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
