@@ -28,7 +28,8 @@ jobs:
       
       - name: Install EvalLoop with BLEU from TestPyPI
         run: |
-          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "evalloop[bleu]==0.0.1a1"
+          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "evalloop[bleu]==0.0.1a0"
+          # Using 0.0.1a0 as that's what was published to TestPyPI
 
       - name: Run EvalLoop
         run: evalloop run --soft-fail --output-dir results tests/basic_example.yaml
