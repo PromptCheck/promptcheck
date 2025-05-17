@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, Literal
 from pydantic import BaseModel, Field
 import re # For RegexMatchMetric
 
@@ -16,6 +16,10 @@ class MetricResult(BaseModel):
     passed: Optional[bool] = None # True if thresholds are met, False otherwise, None if not applicable
     details: Optional[Dict[str, Any]] = None # For any additional metric-specific details
     error: Optional[str] = None # If an error occurred during metric calculation
+
+# Helper function for comparisons
+def _cmp(actual: float, operator: Literal[">=", "<="], threshold: float) -> bool:
+    return actual >= threshold if operator == ">=" else actual <= threshold
 
 class Metric(ABC):
     """Abstract Base Class for all metrics."""
@@ -53,33 +57,23 @@ class Metric(ABC):
 
     def evaluate_thresholds(self, score: Any) -> Optional[bool]:
         """
-        Evaluates if the given score meets the configured thresholds.
-        This is a basic implementation; specific metrics might override or extend it.
-        Returns True if passed, False if failed, None if no threshold is applicable.
+        Evaluates if the given score meets the configured thresholds using the generic _cmp helper.
+        Returns True if passed, False if failed, None if no threshold/value is applicable or score is not numeric.
         """
-        if not self.threshold_config:
-            return None # No threshold to evaluate
-
-        # This is a simplified example. Real evaluation will depend on threshold structure.
-        # For a MetricThreshold Pydantic model like:
-        # class MetricThreshold(BaseModel):
-        #     value: Optional[Union[int, float]] = None
-        #     f_score: Optional[float] = None ... etc.
-
-        # Example for a simple numeric 'value' threshold (e.g., latency)
-        # Assumes higher is worse for 'value' like latency, lower is worse for 'f_score'
-        # This logic needs to be robust based on the actual MetricThreshold fields and metric nature.
+        if self.threshold_config is None or self.threshold_config.value is None or not isinstance(score, (int, float)):
+            return None # No threshold value to evaluate against or score is not numeric
         
-        threshold_value = self.threshold_config.value
-        if threshold_value is not None and isinstance(score, (int, float)):
-            # Example: if metric is latency, score <= threshold_value is pass
-            # This needs to be defined per metric type (e.g. lower is better for latency)
-            # For now, let's assume if 'value' is present, score must be <= value for pass
-            # This is a placeholder and needs proper definition based on metric.
-            # For exact_match, this isn't used as pass/fail is the score itself.
-            pass # This method will be more useful for ROUGE, latency, etc.
+        # Ensure score and threshold_config.value are float for comparison if they are numbers
+        try:
+            numeric_score = float(score)
+            numeric_threshold_value = float(self.threshold_config.value)
+        except (ValueError, TypeError):
+            return None # Cannot convert score or threshold to float
 
-        return None # Default to None if no specific threshold logic matches
+        # Use the _cmp helper with the operator and value from MetricThreshold
+        # The default operator in MetricThreshold is ">=". Specific metrics can override this.
+        passed = _cmp(numeric_score, self.threshold_config.operator, numeric_threshold_value)
+        return passed
 
 
 # We will add concrete Metric implementations below this, like ExactMatchMetric.
@@ -315,7 +309,7 @@ class RougeMetric(Metric):
                 "fmeasure": score_obj.fmeasure
             }
 
-        passed_status = self.evaluate_thresholds(final_score_value) # Use base class or override
+        passed_status = super().evaluate_thresholds(final_score_value) # Use base class method
 
         return MetricResult(
             metric_name=self.metric_name, # Or more dynamic like f"{self.rouge_type}_{self.score_key}"
@@ -324,23 +318,7 @@ class RougeMetric(Metric):
             details={"rouge_type": self.rouge_type, "score_key_used": self.score_key, "all_scores": all_scores_details}
         )
     
-    def evaluate_thresholds(self, score: float) -> Optional[bool]:
-        """Override to handle specific threshold logic for ROUGE scores (higher is better)."""
-        if not self.threshold_config:
-            return None
-        
-        # Assuming threshold_config is a Pydantic model MetricThreshold from schemas.py
-        # And it has fields like `f_score`, `precision_score`, `recall_score`
-        # For ROUGE, typically we check if score >= threshold_value
-
-        threshold_f_score = self.threshold_config.f_score 
-        if threshold_f_score is not None:
-            if self.score_key == "fmeasure": # Only apply if we are calculating fmeasure
-                return score >= threshold_f_score
-            # Could add checks for precision/recall thresholds if score_key matches them
-        
-        # Add other threshold checks as needed, e.g., for self.threshold_config.value if that's used
-        return None # No applicable threshold condition met or defined for the current score_key
+    # evaluate_thresholds method removed
 
 class BleuMetric(Metric):
     metric_name = "bleu"
@@ -410,7 +388,7 @@ class BleuMetric(Metric):
                 details={"n_gram": self.n_gram}
             )
 
-        passed_status = self.evaluate_thresholds(bleu_score)
+        passed_status = super().evaluate_thresholds(bleu_score) # Use base class method
 
         return MetricResult(
             metric_name=f"bleu-{self.n_gram}", # e.g., bleu-4
@@ -419,16 +397,7 @@ class BleuMetric(Metric):
             details={"n_gram": self.n_gram}
         )
     
-    def evaluate_thresholds(self, score: float) -> Optional[bool]:
-        """Override to handle specific threshold logic for BLEU scores (higher is better)."""
-        if not self.threshold_config:
-            return None
-        
-        # Assuming threshold_config has a `value` field for BLEU score
-        threshold_val = self.threshold_config.value
-        if threshold_val is not None and isinstance(threshold_val, (float, int)):
-            return score >= threshold_val
-        return None
+    # evaluate_thresholds method removed
 
 class TokenCountMetric(Metric):
     metric_name = "token_count"
@@ -501,13 +470,22 @@ class LatencyMetric(Metric):
 
     def __init__(self, metric_config: Dict[str, Any]):
         super().__init__(metric_config)
-        # No specific parameters for latency metric itself, thresholds are handled by base/override
+        # For latency, lower is better. If an operator isn't explicitly set
+        # in the threshold_config, default it to "<=".
+        if self.threshold_config and self.threshold_config.value is not None and self.threshold_config.operator == ">=":
+             # Only override if a value is present and operator is the default (which means user didn't specify one)
+             # Or, more simply, if a specific operator for latency wasn't given, assume '<='
+             # Let's assume if user provides an operator, they know what they are doing.
+             # If threshold_config was created from YAML that *didn't* specify an operator,
+             # MetricThreshold defaults to ">=". For latency, we want "<=" by default.
+            if not metric_config.get('threshold', {}).get('operator') and not metric_config.get('thresholds', {}).get('operator'):
+                 self.threshold_config.operator = "<="
 
     def calculate(self, test_case: TestCase, llm_response: LLMResponse) -> MetricResult:
         if llm_response.error:
             return MetricResult(
                 metric_name=self.metric_name,
-                score=-1, # Indicate error or N/A for latency
+                score=-1, 
                 passed=False,
                 error=f"Cannot report latency due to LLM call error: {llm_response.error}"
             )
@@ -516,33 +494,22 @@ class LatencyMetric(Metric):
             return MetricResult(
                 metric_name=self.metric_name,
                 score=-1,
-                passed=False, # Or None, depending on how to treat missing latency
+                passed=False, 
                 error=f"LLM response missing latency_ms for test: {test_case.name}",
                 details={"message": "Latency information not available from provider."}
             )
         
         latency = llm_response.latency_ms
-        passed_status = self.evaluate_thresholds(latency)
+        passed_status = super().evaluate_thresholds(latency) # Use base class method
 
         return MetricResult(
             metric_name=self.metric_name,
-            score=latency, # Latency in milliseconds
-            passed=passed_status if passed_status is not None else True, # Default to True if no threshold
+            score=latency, 
+            passed=passed_status if passed_status is not None else True, 
             details={"unit": "ms"}
         )
 
-    def evaluate_thresholds(self, score: float) -> Optional[bool]:
-        """Override for latency: lower scores (faster) are better."""
-        if not self.threshold_config: 
-            return None
-        
-        # Assumes self.threshold_config is a MetricThreshold Pydantic model
-        # and has a `value` field for the max allowed latency in ms.
-        threshold_val = self.threshold_config.value 
-        if threshold_val is not None and isinstance(threshold_val, (int, float)):
-            return score <= threshold_val # Pass if actual latency is less than or equal to threshold
-        
-        return None # No applicable threshold found or type mismatch
+    # evaluate_thresholds method removed, now uses base class implementation.
 
 # Further expand __main__ for LatencyMetric tests later if needed.
 
@@ -577,6 +544,10 @@ class CostMetric(Metric):
     def __init__(self, metric_config: Dict[str, Any]):
         super().__init__(metric_config)
         self.pricing_data = metric_config.get("parameters", {}).get("pricing_data", DEFAULT_PLACEHOLDER_PRICING)
+        # For cost, lower is better. Default operator to "<=" if not specified by user.
+        if self.threshold_config and self.threshold_config.value is not None:
+            if not metric_config.get('threshold', {}).get('operator') and not metric_config.get('thresholds', {}).get('operator'):
+                 self.threshold_config.operator = "<="
 
     def calculate(self, test_case: TestCase, llm_response: LLMResponse) -> MetricResult:
         if llm_response.error:
@@ -587,89 +558,58 @@ class CostMetric(Metric):
                 error=f"Cannot calculate cost due to LLM call error: {llm_response.error}"
             )
 
+        calculated_cost: Optional[float] = None
+        source = "unknown"
+
         if llm_response.cost is not None:
-            cost = llm_response.cost
-            passed_status = self.evaluate_thresholds(cost)
-            return MetricResult(
-                metric_name=self.metric_name,
-                score=cost,
-                passed=passed_status if passed_status is not None else True,
-                details={"unit": "USD", "source": "provider_reported"}
-            )
+            calculated_cost = llm_response.cost
+            source = "provider_reported"
+        else:
+            prompt_tokens = llm_response.prompt_tokens
+            completion_tokens = llm_response.completion_tokens
+            model_name = llm_response.model_name_used
+            
+            provider_name = "unknown_provider"
+            if test_case.case_model_config:
+                provider_name = test_case.case_model_config.provider
+                if provider_name == "default":
+                    if model_name and "/" in model_name:
+                        provider_name = model_name.split('/')[0]
+            elif model_name and "/" in model_name:
+                 provider_name = model_name.split('/')[0]
 
-        prompt_tokens = llm_response.prompt_tokens
-        completion_tokens = llm_response.completion_tokens
-        model_name = llm_response.model_name_used
-        
-        # Access provider via test_case.case_model_config
-        provider_name = "unknown_provider" # Default if not found
-        if test_case.case_model_config: # Check if case_model_config exists
-            provider_name = test_case.case_model_config.provider
-            if provider_name == "default":
-                # This logic to get global default provider from test_case is problematic.
-                # The runner should resolve the actual provider used and pass it, 
-                # or the llm_response.model_name_used should be specific enough (e.g. "openrouter/mistralai...")
-                # For now, if it's default from test case, it implies it should have been resolved by runner.
-                # If model_name_used contains a slash, assume it's like "provider/model"
-                if model_name and "/" in model_name:
-                    provider_name = model_name.split('/')[0]
-                # If still default, it means we couldn't determine it from test case or global config easily here.
-                # Rely on pricing table's general default or provider in model_name_used.
-        elif model_name and "/" in model_name: # Fallback if no case_model_config but model_name suggests provider
-             provider_name = model_name.split('/')[0]
+            if prompt_tokens is None or completion_tokens is None or model_name is None:
+                return MetricResult(
+                    metric_name=self.metric_name, score=-1.0, passed=False, 
+                    details={"message": "Token counts or model name missing for cost calculation."},
+                    error="Incomplete token/model info from provider."
+                )
 
-        if prompt_tokens is None or completion_tokens is None or model_name is None:
-            return MetricResult(
-                metric_name=self.metric_name,
-                score=-1.0,
-                passed=False, 
-                details={"message": "Token counts or model name missing, cannot calculate cost."},
-                error="Incomplete token/model info from provider."
-            )
+            provider_pricing = self.pricing_data.get(provider_name, self.pricing_data.get("default", {}))
+            model_pricing = provider_pricing.get(model_name, provider_pricing.get("default", {}))
 
-        provider_pricing = self.pricing_data.get(provider_name, self.pricing_data.get("default", {}))
-        model_pricing = provider_pricing.get(model_name, provider_pricing.get("default", {}))
+            if not model_pricing or "input_cost_per_1k_tokens" not in model_pricing or "output_cost_per_1k_tokens" not in model_pricing:
+                return MetricResult(
+                    metric_name=self.metric_name, score=-1.0, passed=False,
+                    details={"provider": provider_name, "model": model_name, "message": "Pricing info not found."},
+                    error="Pricing not available."
+                )
+            
+            input_cost = (prompt_tokens / 1000) * model_pricing["input_cost_per_1k_tokens"]
+            output_cost = (completion_tokens / 1000) * model_pricing["output_cost_per_1k_tokens"]
+            calculated_cost = input_cost + output_cost
+            source = "calculated"
 
-        if not model_pricing or "input_cost_per_1k_tokens" not in model_pricing or "output_cost_per_1k_tokens" not in model_pricing:
-            return MetricResult(
-                metric_name=self.metric_name,
-                score=-1.0,
-                passed=False, 
-                details={"provider": provider_name, "model": model_name, "message": "Pricing info not found for this model/provider."},
-                error="Pricing not available."
-            )
-        
-        input_cost = (prompt_tokens / 1000) * model_pricing["input_cost_per_1k_tokens"]
-        output_cost = (completion_tokens / 1000) * model_pricing["output_cost_per_1k_tokens"]
-        total_cost = input_cost + output_cost
-
-        passed_status = self.evaluate_thresholds(total_cost)
+        passed_status = super().evaluate_thresholds(calculated_cost) if calculated_cost is not None else False
 
         return MetricResult(
             metric_name=self.metric_name,
-            score=total_cost,
-            passed=passed_status if passed_status is not None else True,
-            details={
-                "unit": "USD", 
-                "source": "calculated", 
-                "prompt_tokens": prompt_tokens, 
-                "completion_tokens": completion_tokens,
-                "input_cost_per_1k": model_pricing["input_cost_per_1k_tokens"],
-                "output_cost_per_1k": model_pricing["output_cost_per_1k_tokens"]
-            }
+            score=calculated_cost if calculated_cost is not None else -1.0,
+            passed=passed_status if passed_status is not None else (True if calculated_cost is not None and self.threshold_config is None else False),
+            details={"unit": "USD", "source": source}
         )
 
-    def evaluate_thresholds(self, score: float) -> Optional[bool]:
-        """Override for cost: lower scores (cheaper) are better."""
-        if not self.threshold_config:
-            return None
-        
-        threshold_val = self.threshold_config.value # e.g. cost_per_run_usd
-        if threshold_val is not None and isinstance(threshold_val, (int, float)):
-            return score <= threshold_val
-        return None
-
-# Further expand __main__ for CostMetric tests later if needed.
+    # evaluate_thresholds method removed
 
 # Metric Factory
 _metric_classes = {

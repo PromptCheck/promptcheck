@@ -22,7 +22,8 @@
         count_types: ["completion", "total"]
     - metric: "latency"
       threshold:
-        value: 10000 # Allow up to 10 seconds for free tier models
+        value: 10000 
+        operator: "<=" # Explicitly show operator
     - metric: "cost" 
       # Cost should be very low or zero for free models on OpenRouter if reported by header.
       # No threshold here, just observe.

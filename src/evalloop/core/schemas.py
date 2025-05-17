@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Union, Literal
 from pydantic import BaseModel, Field, validator, RootModel
 
 class MetricThreshold(BaseModel):
@@ -6,6 +6,7 @@ class MetricThreshold(BaseModel):
     f_score: Optional[float] = None
     value: Optional[Union[int, float]] = None
     completion_max: Optional[int] = None
+    operator: Literal[">=", "<="] = ">="
     # Add other specific threshold types as needed
 
 class MetricConfig(BaseModel):
