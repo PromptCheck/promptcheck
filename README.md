@@ -1,8 +1,8 @@
 # EvalLoop
 
-Continuous Integration for LLM prompts & agents
+EvalLoop is a CI-first test harness for LLM prompts. It lets you write tests for GPT/Claude outputs, and automatically checks them in CI so you can catch prompt regressions early — before they reach users.
 
-EvalLoop is a **CI-first test harness for LLM prompts**.  
+# EvalLoop is a **CI-first test harness for LLM prompts**.  
 Write tests in YAML, gate pull-requests, and see pass/fail summaries posted as
 comments—so your prompts don't quietly regress.
 
@@ -20,11 +20,23 @@ evaloop init                 # scaffolds config + tests/
 evaloop run                  # executes all *.yaml under tests/
 ```
 
-> **Need full example?** See [`example/`](example/) or the [Quick-Start Guide](docs/quickstart.md).
+---
+
+## Why Prompt Testing Matters
+
+LLMs can break without warning — even small prompt changes or model updates can cause major regressions. EvalLoop automates prompt evaluation like unit tests automate code quality, helping you ensure consistency and reliability in your AI applications.
 
 ---
 
-## What does EvalLoop do?
+## Get Started
+
+Ready to dive in? 
+*   See a basic test example in the [`example/`](example/) directory.
+*   Follow our [Quick-Start Guide](docs/quickstart.md) for step-by-step setup instructions.
+
+---
+
+## What does EvalLoop do? Key Concepts in Automated LLM Evaluation
 
 When you tweak a prompt, swap models, or refactor your agent code, **EvalLoop** runs a battery of tests in CI (Rouge, regex, token-cost, latency, etc.) and fails the pull-request if quality regresses or cost spikes.
 
@@ -32,7 +44,7 @@ Think **pytest + coverage**, but for LLM output.
 
 ---
 
-## Key features
+## Key Features for Effective LLM Testing
 
 *   **Easy setup** — drop a YAML test file, add the GitHub Action, done.
 *   **Multi‑provider** — OpenAI, Groq, OpenRouter (more soon).
@@ -97,7 +109,7 @@ Add more cases in `tests/`. Thresholds (like `value` for latency, or `f_score` f
 
 ---
 
-## Installation variants
+## Installation Options & Development Setup
 
 ```bash
 # From PyPI (once 0.1.0+ is live)
