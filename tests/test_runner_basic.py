@@ -12,10 +12,9 @@ def test_single_exact_match(tmp_path: Path):
         input_data=InputData(prompt="Say hi"),
         expected_output=ExpectedOutput(exact_match_string="Hello world"),
         metric_configs=[MetricConfig(metric="exact_match")],
-        # For Pydantic v2, model_config is an alias for case_model_config field.
-        # We directly instantiate case_model_config if needed or let it use default_factory from schema.
-        # Here, we are providing the dict that will be parsed into case_model_config.
-        case_model_config=ModelConfig(provider="dummy", model_name="dummy/1") 
+        # Use the alias 'model_config' for the keyword argument,
+        # Pydantic should map this to the case_model_config field.
+        model_config=ModelConfig(provider="dummy", model_name="dummy/1") 
         # The example from GPT used model_config directly, which relies on alias parsing for case_model_config
         # model_config={"provider": "dummy", "model_name": "dummy/1"} # This would also work due to alias
     )
