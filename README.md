@@ -29,7 +29,7 @@ Think **pytest + coverage**, but for LLM output.
 ## Quick‑start (60 s)
 
 ```bash
-# 1. Install (once v0.1.0 is on PyPI, for now use local dev setup or TestPyPI)
+# 1. Install (once v0.1.0 is on PyPI, for now use local dev setup  or TestPyPI)
 # pip install evalloop 
 # For development:
 # git clone https://github.com/b00gn1sh/evalloop.git
