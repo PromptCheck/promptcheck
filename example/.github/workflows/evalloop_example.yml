@@ -1,0 +1,73 @@
+name: EvalLoop Example Workflow
+
+on:
+  pull_request:
+    branches:
+      - main # Or your default development branch
+  push:
+    branches:
+      - main # Or your default development branch
+  # workflow_dispatch: # Optional: allow manual triggering
+
+jobs:
+  evaluate_prompts:
+    name: Run EvalLoop Evaluations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Needed to checkout the repository
+      pull-requests: write # Needed to post comments on PRs
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # Or your preferred Python version for evalloop
+      
+      - name: Install EvalLoop
+        run: |
+          # Install from PyPI once available, e.g.:
+          # pip install "evalloop[bleu]" # Add [bleu] if you use BLEU metric
+          # For now, using TestPyPI as an example:
+          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "evalloop[bleu]==0.0.1a0"
+
+      - name: Run EvalLoop Evaluations
+        # This step assumes your test files are in a 'tests/' directory
+        # and your config (if any, for API keys) is evalloop.config.yaml in the root.
+        # Adjust paths as needed for your project structure.
+        run: evalloop run --soft-fail --output-dir evalloop_results/ tests/
+        env:
+          # Add your LLM provider API keys as secrets in your GitHub repository settings
+          # Example for OpenRouter:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+      - name: Post PR Comment with EvalLoop Results
+        # This step requires a script (e.g., scripts/post_comment.py in the evalloop repo)
+        # to parse the results and post a comment. You would need to include such a 
+        # script in your own repository or use a published GitHub Action for this.
+        # As a placeholder, this shows how it *could* be invoked if you had the script.
+        if: github.event_name == 'pull_request' && always() # always() ensures it runs even if prior steps fail (due to --soft-fail)
+        run: |
+          echo "Attempting to post PR comment..."
+          # Assuming you have a results file, e.g., evalloop_results/evalloop_run_*.json
+          # And a script like https://github.com/b00gn1sh/evalloop/blob/main/scripts/post_comment.py
+          # (You would need to copy or adapt this script into your own repository)
+          # Example invocation (if script is at ./scripts/post_comment.py):
+          # python ./scripts/post_comment.py evalloop_results/evalloop_run_*.json
+          echo "(Placeholder for PR comment posting logic - adapt post_comment.py from evalloop repo)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
+      - name: Upload EvalLoop Results Artifact
+        if: always() # Always run to upload results, even if tests failed (due to --soft-fail)
+        uses: actions/upload-artifact@v4
+        with:
+          name: evalloop-evaluation-results
+          path: evalloop_results/
+          if-no-files-found: warn 

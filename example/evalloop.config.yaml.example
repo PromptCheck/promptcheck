@@ -1,0 +1,33 @@
+# evalloop.config.yaml.example
+
+# Default model to use if not specified in a test case
+default_model:
+  provider: "openrouter" # or "openai", "groq"
+  model_name: "google/gemini-flash-1.5-latest" # Or any other preferred default, e.g., "mistralai/mistral-7b-instruct"
+
+# API key configurations
+# It's often better to use environment variables for API keys (see docs and .bashrc or .zshrc examples)
+api_keys:
+  openai: "YOUR_OPENAI_API_KEY_HERE"                  # Or from env: OPENAI_API_KEY
+  groq: "YOUR_GROQ_API_KEY_HERE"                      # Or from env: GROQ_API_KEY
+  openrouter: "YOUR_OPENROUTER_API_KEY_HERE"            # Or from env: OPENROUTER_API_KEY
+  # anthropic: "YOUR_ANTHROPIC_API_KEY_HERE"         # Or from env: ANTHROPIC_API_KEY
+  # cohere: "YOUR_COHERE_API_KEY_HERE"              # Or from env: COHERE_API_KEY
+
+# Global thresholds (can be overridden in individual test cases)
+# These are examples and can be customized or removed if not needed globally.
+# global_thresholds:
+#   latency_ms_p95: 5000 # Example: p95 latency should be below 5s for any test not overriding this
+#   min_pass_rate_percent: 90 # Example: For the whole run, at least 90% of tests should pass
+
+# Provider-specific settings (e.g., default timeouts, retries if not handled by tenacity in provider code)
+# These can be overridden by test_case.case_model_config.parameters
+# provider_settings:
+#   openai:
+#     default_timeout_s: 60
+#     default_retry_attempts: 2 # Note: retry logic is primarily in provider code using Tenacity
+#   openrouter:
+#     default_timeout_s: 45
+#     default_retry_attempts: 3 # Note: retry logic is primarily in provider code using Tenacity
+#   groq:
+#     default_timeout_s: 30 
