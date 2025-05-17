@@ -1,43 +1,38 @@
-- id: "openrouter_greet_test_001"
-  name: "OpenRouter Basic Greeting Test"
-  description: "Tests a basic greeting prompt using a free model on OpenRouter (Mistral 7B Instruct)."
-  type: "llm_generation"
+- id: "openrouter_greet_test_001"  # Unique identifier for this test case (optional but recommended)
+  name: "OpenRouter Basic Greeting Test" # Human-readable name for the test
+  description: "Tests a basic greeting prompt using a free model on OpenRouter (Mistral 7B Instruct)." # Optional description
+  type: "llm_generation" # Type of test, currently supports "llm_generation"
 
-  input_data:
-    prompt: "Briefly introduce yourself and greet the user."
+  input_data: # Defines the input to the LLM
+    prompt: "Briefly introduce yourself and greet the user." # The prompt text
 
-  expected_output:
-    # For a free-form generation, exact_match is too strict.
-    # We might use a regex to check for keywords or a semantic similarity metric later.
-    # For now, we'll just check if we get *any* response.
-    # A human would review the actual output for quality.
-    # To make this test pass automatically for now, we can add a lenient regex.
-    regex_pattern: ".+" # Matches any non-empty string. Crude, but makes the test pass.
+  expected_output: # Defines expected outcomes for evaluation
+    # For regex_match, a pattern to find in the LLM's output
+    regex_pattern: ".+" # Example: matches any non-empty string. Crude, but makes the test pass for now.
 
-  metric_configs:
-    - metric: "regex_match" 
-      # No threshold needed if we just want to see if it ran and matched the loose regex.
-    - metric: "token_count"
-      parameters:
-        count_types: ["completion", "total"]
-    - metric: "latency"
-      threshold:
-        value: 10000 
-        operator: "<=" # Explicitly show operator
-    - metric: "cost" 
-      # Cost should be very low or zero for free models on OpenRouter if reported by header.
-      # No threshold here, just observe.
+  metric_configs: # List of metrics to apply to the LLM's output
+    - metric: "regex_match" # Specifies the regex_match metric
+      # No threshold needed here, just checks if the (very loose) regex pattern matches.
+    - metric: "token_count" # Specifies the token_count metric
+      parameters: # Optional parameters for the metric
+        count_types: ["completion", "total"] # Types of token counts to report
+    - metric: "latency" # Specifies the latency metric
+      threshold: # Optional: defines pass/fail criteria for this metric
+        value: 10000 # Maximum allowed latency in milliseconds
+        operator: "<=" # Test passes if actual latency is less than or equal to this value
+    - metric: "cost" # Specifies the cost metric
+      # No threshold for cost in this example; it will just be reported.
+      # OpenRouter may provide cost via headers for some models.
 
-  model_config:
-    provider: "openrouter"
-    # Using a commonly available free-tier model. User needs OPENROUTER_API_KEY in env or config.
-    model_name: "mistralai/mistral-7b-instruct"
-    parameters:
-      temperature: 0.7
-      max_tokens: 50
-      # Add a default timeout to ensure it doesn't hang indefinitely on a free model
-      timeout_s: 25.0 
-      # Add a default retry for robustness with potentially rate-limited free models
-      retry_attempts: 2
+  model_config: # Configuration for the LLM to be used for this test case
+    provider: "openrouter" # Specifies the LLM provider (e.g., "openai", "groq", "openrouter")
+    # Using a commonly available free-tier model on OpenRouter.
+    # Requires OPENROUTER_API_KEY in environment or evalloop.config.yaml.
+    model_name: "mistralai/mistral-7b-instruct" # Specific model name for the provider
+    parameters: # LLM call parameters (provider-specific)
+      temperature: 0.7 # Controls randomness (0.0 to 2.0)
+      max_tokens: 50   # Maximum number of tokens to generate in the completion
+      timeout_s: 25.0  # Per-attempt timeout for the API call in seconds
+      retry_attempts: 2 # Number of retry attempts for the API call
 
-  tags: ["openrouter", "free_model", "basic_example", "greeting"] 
+  tags: ["openrouter", "free_model", "basic_example", "greeting"] # Optional tags for filtering/grouping tests 

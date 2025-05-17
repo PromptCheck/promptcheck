@@ -1,0 +1,16 @@
+# threshold_demo.yaml
+# Demonstrates a numeric metric with a fail threshold
+name: "Short summary must hit ROUGE ≥ 0.20"
+input_data:
+  prompt: |
+    Summarize the following text in one sentence: 
+    "The quick brown fox jumps over the lazy dog."
+expected_output:
+  reference_texts:
+    - "A fox swiftly jumps over a lazy dog."
+metric_configs:
+  - metric: rouge_l_f1 # GPT used 'name:', our schema uses 'metric:'
+    threshold:
+      value: 0.20        # fail if ROUGE-L F1 < 0.20 (operator defaults to >=)
+model_config:
+  provider: dummy        # uses DummyProvider in CI 
