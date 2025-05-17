@@ -51,7 +51,7 @@ Think **pytest + coverage**, but for LLM output.
 
 ## What it looks like
 
-![EvalLoop PR Comment](docs/img/pr_comment.gif)
+![EvalLoop PR Comment](docs/img/evalloop_pr_comment.gif)
 
 ---
 
@@ -142,7 +142,7 @@ git push origin v<new_version_例えば_0.1.0>
 
 ## Documentation
 
-📖 **Docs:** [Quick-Start](docs/quickstart.md) · [YAML reference](docs/yaml_reference.md)
+📖 **Docs:** [Quick-Start Guide](docs/quickstart.md) · [YAML Reference](docs/yaml_reference.md) (Coming Soon!)
 
 ---
 
@@ -162,6 +162,10 @@ git push origin v<new_version_例えば_0.1.0>
 3.  Run tests locally: `poetry run evalloop run tests/` (or a specific file). Keep it green!
 4.  Make your changes, add tests for new features.
 5.  Open a Pull Request.
+
+### Feedback & Questions
+
+Found an issue or have a question? We'd love to hear from you! Please [open an issue](https://github.com/b00gn1sh/evalloop/issues) or start a [discussion](https://github.com/b00gn1sh/evalloop/discussions).
 
 ---
 

@@ -37,8 +37,8 @@ Follow these five steps to get EvalLoop running in under 5 minutes.
     Add necessary API keys as secrets in your GitHub repository settings.
     EvalLoop will then run on your Pull Requests and post a summary comment like this:
 
-    ![PR Comment](img/pr_comment.gif) <!-- Placeholder: Replace with actual GIF path if different -->
+    ![PR Comment](../img/evalloop_pr_comment.gif) <!-- Placeholder: Replace with actual GIF path from project root: docs/img/evalloop_pr_comment.gif -->
 
 Need more examples? Check the [`example/`](../example/) directory in the EvalLoop repository.
 
-For detailed configuration of test cases and metrics, see the [YAML reference](yaml_reference.md). 
+For detailed configuration of test cases and metrics, see the [YAML reference](yaml_reference.md) (Coming Soon!). 
