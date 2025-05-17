@@ -1,4 +1,4 @@
-name: EvalLoop Self-Test
+name: EvalLoop CI
 
 on:
   push:
@@ -10,43 +10,40 @@ on:
   workflow_dispatch:
 
 jobs:
-  run_evalloop: # Re-enabled original job
-    name: EvalLoop Action Test
+  evalloop_pr_check:
+    name: EvalLoop PR Check & Comment
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # "List context" step can remain removed or be re-added if further debugging is needed
-
-      - name: Run EvalLoop Action 
-        id: evalloop_run
-        uses: ./ 
-        env:
-          DOCKER_BUILDKIT: 0 # Kept for now to ensure build stability with main Dockerfile
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          test_path: 'tests/basic_example.yaml'
-          config_dir: '.' # This implies evalloop.config.yaml is in the root of GITHUB_WORKSPACE
-          output_dir: 'evalloop-action-results'
-
-      - name: Upload EvalLoop Results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: evalloop-results-artifact
-          path: evalloop-action-results/
-          if-no-files-found: warn
-
-      - name: Print run.json path (for debugging)
-        if: always()
+          python-version: '3.11'
+      
+      - name: Install EvalLoop with BLEU from TestPyPI
         run: |
-          echo "Path to run.json from action output: ${{ steps.evalloop_run.outputs.run_json_path }}"
-          echo "Listing contents of output directory:"
-          # ls -R evalloop-action-results/ # This might fail if dir not created due to prior error
-          if [ -d "evalloop-action-results" ]; then ls -R evalloop-action-results/; else echo "output dir not found"; fi
+          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "evalloop[bleu]==0.0.1a1"
 
-  # New job for Pytest unit/integration tests
+      - name: Run EvalLoop
+        run: evalloop run --soft-fail --output-dir results tests/basic_example.yaml
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      - name: Post PR Comment with Results
+        if: github.event_name == 'pull_request'
+        run: python scripts/post_comment.py results/evalloop_run_*.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
   pytest_tests:
     name: Pytest Unit & Integration Tests
     runs-on: ubuntu-latest
@@ -67,8 +64,6 @@ jobs:
 
       - name: Install dependencies (including dev and bleu extra)
         run: poetry install --extras bleu --with dev
-        # Using --with dev to ensure pytest and pytest-mock are installed
-        # --extras bleu ensures NLTK is available if any tests use BleuMetric
 
       - name: Run Pytest
         run: poetry run pytest tests/
