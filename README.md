@@ -2,9 +2,25 @@
 
 Continuous Integration for LLM prompts & agents
 
+EvalLoop is a **CI-first test harness for LLM prompts**.  
+Write tests in YAML, gate pull-requests, and see pass/fail summaries posted as
+comments—so your prompts don't quietly regress.
+
 [![build](https://github.com/b00gn1sh/evalloop/actions/workflows/eval.yml/badge.svg)](https://github.com/b00gn1sh/evalloop/actions)
 [![PyPI](https://img.shields.io/pypi/v/evalloop.svg)](https://pypi.org/project/evalloop/)
 [![License](https://img.shields.io/github/license/b00gn1sh/evalloop.svg)](LICENSE)
+
+---
+
+## 🚀 Install & Run
+
+```bash
+pip install evalloop          # or: pip install evalloop[bleu]
+evaloop init                 # scaffolds config + tests/
+evaloop run                  # executes all *.yaml under tests/
+```
+
+> **Need full example?** See [`example/`](example/) or the [Quick-Start Guide](docs/quickstart.md).
 
 ---
 
@@ -24,51 +40,18 @@ Think **pytest + coverage**, but for LLM output.
 *   **Readable reports** — Action log output and (coming soon) PR comment bot. `run.json` artifact produced.
 *   **Fast to extend** — write your own metric in <30 lines (standard Python).
 
+| Feature | Free | Pro |
+|---------|:----:|:---:|
+| CLI & GitHub Action | ✅ | ✅ |
+| 30-day result history | ✅ | ✅ |
+| Unlimited history & charts | — | ✅ |
+| Slack alerts | — | ✅ |
+
 ---
 
-## Quick‑start (60 s)
+## What it looks like
 
-```bash
-# 1. Install (once v0.1.0 is on PyPI, for now use local dev setup or TestPyPI)
-# pip install evalloop 
-# For development:
-# git clone https://github.com/b00gn1sh/evalloop.git
-# cd evalloop
-# poetry install
-
-# 2. Set a provider key (example uses OpenRouter)
-export OPENROUTER_API_KEY="sk-or-..." # Or set in evalloop.config.yaml
-
-# 3. Scaffold a sample test suite & config
-# (ensure you are in the project root directory)
-poetry run evalloop init   # writes tests/basic_example.yaml and evalloop.config.yaml
-
-# 4. Run locally
-poetry run evalloop run tests/basic_example.yaml
-```
-
-Terminal shows output similar to:
-```
-Starting EvalLoop run...
-Loaded configuration from: evalloop.config.yaml
-Found 1 test file(s) to process:
-  - tests/basic_example.yaml
-Loading test cases from: basic_example.yaml...
-  Successfully loaded 1 test case(s) from basic_example.yaml.
-Total test cases to execute: 1
---- Beginning Test Execution ---
-  Executing: OpenRouter Basic Greeting Test (ID: openrouter_greet_test_001)
-    Using provider: openrouter, Model: mistralai/mistral-7b-instruct
-    Test 'OpenRouter Basic Greeting Test' PASSED.
---- Test Execution Finished ---
-Run results saved to: evalloop_run_YYYYMMDD_HHMMSS.json
-EvalLoop run completed.
-All tests executed passed (or had no failing thresholds defined).
-```
-
-The same command runs in GitHub Actions on every PR.
-
-> **Want CI?** Copy `.github/workflows/eval.yml` from this repo, add `OPENROUTER_API_KEY` (or other provider keys) as a repository secret; the badge up top turns green when your tests pass.
+![EvalLoop PR Comment](docs/img/pr_comment.gif)
 
 ---
 
@@ -154,6 +137,12 @@ poetry publish
 git tag v<new_version_例えば_0.1.0> # e.g., v0.1.0
 git push origin v<new_version_例えば_0.1.0>
 ```
+
+---
+
+## Documentation
+
+📖 **Docs:** [Quick-Start](docs/quickstart.md) · [YAML reference](docs/yaml_reference.md)
 
 ---
 
