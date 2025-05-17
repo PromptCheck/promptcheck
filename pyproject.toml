@@ -25,6 +25,8 @@ evalloop = "evalloop.main:app"
 
 [tool.poetry.group.dev.dependencies]
 twine = "^6.1.0"
+pytest = "^8.3.2"
+pytest-mock = "^3.14.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

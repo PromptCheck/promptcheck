@@ -348,12 +348,42 @@ class OpenRouterProvider(LLMProvider):
         except Exception as e:
             return LLMResponse(error=f"Unexpected error in OpenRouter call: {type(e).__name__} - {e}", model_name_used=model_to_call, attempts_made=1)
 
+class DummyProvider(LLMProvider):
+    provider_name = "dummy"
+
+    def _get_api_key(self, config: EvalLoopConfig) -> Optional[str]:
+        return "local" # Dummy key, not used
+
+    def _get_client(self) -> Any:
+        return None # No actual client needed
+
+    def _execute_llm_call_attempt(
+        self,
+        client: Any, 
+        prompt_messages: List[Dict[str,str]], 
+        model_to_call: str,
+        effective_params: Dict[str, Any],
+        timeout: float
+    ) -> LLMResponse:
+        # Simulate a successful LLM call with fixed data
+        # The prompt, model, and params are available if we want to vary the dummy response later.
+        return LLMResponse(
+            text_output="Hello world",
+            prompt_tokens=1,
+            completion_tokens=2,
+            total_tokens=3,
+            latency_ms=42.0,
+            model_name_used="dummy/dummy-model-v1", # Example dummy model name
+            # raw_response={"message": "Dummy response"}, # Optional: if needed for any tests
+            attempts_made=1
+        )
+
 # Provider Factory
 _provider_classes = {
     OpenAIProvider.provider_name: OpenAIProvider,
     GroqProvider.provider_name: GroqProvider,
     OpenRouterProvider.provider_name: OpenRouterProvider,
-    # Add other providers here as they are implemented
+    DummyProvider.provider_name: DummyProvider, # Register DummyProvider
 }
 
 def get_llm_provider(provider_name: str, global_config: EvalLoopConfig) -> Optional[LLMProvider]:

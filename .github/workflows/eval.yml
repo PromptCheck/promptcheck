@@ -46,6 +46,33 @@ jobs:
           # ls -R evalloop-action-results/ # This might fail if dir not created due to prior error
           if [ -d "evalloop-action-results" ]; then ls -R evalloop-action-results/; else echo "output dir not found"; fi
 
+  # New job for Pytest unit/integration tests
+  pytest_tests:
+    name: Pytest Unit & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version || '3.11' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version || '3.11' }}
+      
+      - name: Install Poetry
+        run: pip install poetry==1.8.3
+      
+      - name: Configure Poetry
+        run: poetry config virtualenvs.create false
+
+      - name: Install dependencies (including dev and bleu extra)
+        run: poetry install --extras bleu --with dev
+        # Using --with dev to ensure pytest and pytest-mock are installed
+        # --extras bleu ensures NLTK is available if any tests use BleuMetric
+
+      - name: Run Pytest
+        run: poetry run pytest tests/
+
   # test_pypi_package: # Temporary job removed
   #   name: Test EvalLoop from TestPyPI
   #   runs-on: ubuntu-latest
