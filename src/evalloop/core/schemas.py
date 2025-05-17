@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional, Union, Literal
-from pydantic import BaseModel, Field, validator, RootModel
+from pydantic import BaseModel, Field, validator, RootModel, ConfigDict, model_validator
 
 class MetricThreshold(BaseModel):
     # Flexible to allow different kinds of thresholds, e.g., f_score for rouge, value for latency
@@ -12,14 +12,18 @@ class MetricThreshold(BaseModel):
 class MetricConfig(BaseModel):
     metric: str
     parameters: Optional[Dict[str, Any]] = None
-    threshold: Optional[MetricThreshold] = None # For single value thresholds like latency
-    thresholds: Optional[MetricThreshold] = None # Alias for threshold, or for multi-value like token_count
+    # thresholds field will be populated by the validator if 'threshold' is used in input
+    thresholds: Optional[MetricThreshold] = None 
 
-    @validator('thresholds', pre=True, always=True)
-    def _check_thresholds(cls, v, values):
-        if v is None and values.get('threshold') is not None:
-            return values.get('threshold')
-        return v
+    @model_validator(mode='before')
+    @classmethod
+    def _populate_thresholds_from_alias(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            # If 'thresholds' is not present but 'threshold' is, 
+            # move value from 'threshold' to 'thresholds'.
+            if 'thresholds' not in data and 'threshold' in data:
+                data['thresholds'] = data.pop('threshold')
+        return data
 
 class ModelConfigParameters(BaseModel):
     temperature: Optional[float] = Field(None, ge=0.0, le=2.0, description="Sampling temperature for the LLM call.")
@@ -28,8 +32,7 @@ class ModelConfigParameters(BaseModel):
     retry_attempts: Optional[int] = Field(None, ge=0, le=5, description="Number of retry attempts for the API call. Overrides provider defaults and global defaults.")
     # Add other common model parameters here or allow arbitrary through extra
     # For now, let's allow any other parameters
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra='allow')
 
 class ModelConfig(BaseModel):
     provider: str = "default"
@@ -45,8 +48,7 @@ class ExpectedOutput(BaseModel):
     regex_pattern: Optional[str] = None
     reference_texts: Optional[List[str]] = None
     # Allow for custom data structures for other metric types if needed in the future
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra='allow')
 
 class TestCase(BaseModel):
     id: Optional[str] = None
@@ -160,8 +162,7 @@ class ApiKeys(BaseModel):
     groq: Optional[str] = None
     openrouter: Optional[str] = None
     # Add other provider API keys as needed
-    class Config:
-        extra = "allow" # Allow other keys for future providers
+    model_config = ConfigDict(extra='allow') # Allow other keys for future providers
 
 class DefaultThresholds(BaseModel):
     latency_p95_ms: Optional[int] = None

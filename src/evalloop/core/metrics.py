@@ -236,13 +236,12 @@ class RegexMatchMetric(Metric):
 # Further expand __main__ for RegexMatchMetric tests later if needed.
 
 class RougeMetric(Metric):
-    metric_name = "rouge_l_f1" # Specific to ROUGE-L F1-score for clarity
+    metric_name = "rouge_l_f1" 
 
     def __init__(self, metric_config: Dict[str, Any]):
         super().__init__(metric_config)
-        # rouge_types to calculate, e.g., ["rougeL", "rouge1"]. Defaulting to rougeL.
         self.rouge_type = metric_config.get("parameters", {}).get("rouge_type", "rougeL")
-        self.score_key = metric_config.get("parameters", {}).get("score_key", "fmeasure") # precision, recall, fmeasure
+        self.score_key = metric_config.get("parameters", {}).get("score_key", "fmeasure")
 
     def calculate(self, test_case: TestCase, llm_response: LLMResponse) -> MetricResult:
         if llm_response.error:
@@ -309,16 +308,23 @@ class RougeMetric(Metric):
                 "fmeasure": score_obj.fmeasure
             }
 
-        passed_status = super().evaluate_thresholds(final_score_value) # Use base class method
+        # Call its own evaluate_thresholds, not super()
+        passed_status = self.evaluate_thresholds(final_score_value) 
 
         return MetricResult(
-            metric_name=self.metric_name, # Or more dynamic like f"{self.rouge_type}_{self.score_key}"
+            metric_name=self.metric_name, 
             score=final_score_value,
-            passed=passed_status if passed_status is not None else (final_score_value >= 0.0), # Default pass if no threshold & score >=0
+            passed=passed_status if passed_status is not None else (final_score_value >= 0.0), 
             details={"rouge_type": self.rouge_type, "score_key_used": self.score_key, "all_scores": all_scores_details}
         )
     
-    # evaluate_thresholds method removed
+    def evaluate_thresholds(self, score: float) -> Optional[bool]:
+        """Evaluate ROUGE score against f_score threshold if defined."""
+        if not self.threshold_config or self.threshold_config.f_score is None:
+            return None # No applicable threshold
+        
+        # For ROUGE f_score, higher is better (default operator is >=)
+        return _cmp(score, self.threshold_config.operator, self.threshold_config.f_score)
 
 class BleuMetric(Metric):
     metric_name = "bleu"
@@ -455,12 +461,23 @@ class TokenCountMetric(Metric):
         overall_pass = True 
         threshold_conditions_met = False
 
-        # Now self.threshold_config is a MetricThreshold object
+        # self.threshold_config is a MetricThreshold object
         if self.threshold_config.completion_max is not None and "completion_tokens" in scores:
             threshold_conditions_met = True
-            if scores["completion_tokens"] > self.threshold_config.completion_max:
+            # For completion_max, actual <= threshold is a pass.
+            # We use _cmp with the appropriate operator.
+            # If user specifies an operator for completion_max in YAML, it would be used.
+            # If not, MetricThreshold.operator defaults to ">=", which is wrong for a "max" type.
+            # So, we assume completion_max implies "<=".
+            # This highlights a limitation of a single operator in MetricThreshold if not overridden.
+            # Let's assume completion_max implicitly means operator should be "<=" here.
+            # A more robust MetricThreshold could have per-field operators or type of threshold.
+            if not _cmp(float(scores["completion_tokens"]), "<=", float(self.threshold_config.completion_max)):
                 overall_pass = False
         
+        # Add checks for other potential thresholds like `prompt_max`, `total_max` etc.
+        # if self.threshold_config.prompt_max ...
+
         return overall_pass if threshold_conditions_met else None
 
 # Further expand __main__ for TokenCountMetric tests later if needed.
