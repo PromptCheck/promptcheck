@@ -3,14 +3,14 @@ from typing import List, Optional, Dict
 import typer 
 import uuid
 import datetime
+from datetime import timezone
 import asyncio
 from ..utils.logging_utils import get_logger
 from .schemas import (
     PromptCheckConfig, TestCase, MetricOutput, TestCaseOutput, RunOutput,
     APIKeys, ModelConfig, TestFile, MetricType, MetricThreshold, MetricConfig, InputData, ExpectedOutput,
-    GlobalThresholds, ProviderSettings, DefaultModelConfig, DefaultThresholds, OutputOptions
+    DefaultModelConfig, DefaultThresholds, OutputOptions, ModelConfigParameters
 )
-from .metrics import METRIC_REGISTRY
 from promptcheck.core.providers import LLMResponse, get_llm_provider, LLMProvider
 from promptcheck.core.metrics import MetricResult, get_metric_calculator, Metric
 
@@ -28,7 +28,7 @@ class PromptCheckRunner:
             self.provider_cache[provider_name] = get_llm_provider(provider_name, self.global_config)
         return self.provider_cache[provider_name]
 
-    def _resolve_model_config(self, test_case_model_cfg: Optional[TestCaseModelConfig]) -> TestCaseModelConfig:
+    def _resolve_model_config(self, test_case_model_cfg: Optional[ModelConfig]) -> ModelConfig:
         current_test_case_model_cfg = test_case_model_cfg if test_case_model_cfg is not None else ModelConfig()
         provider_name_to_use = current_test_case_model_cfg.provider
         model_name_to_use = current_test_case_model_cfg.model_name
@@ -51,7 +51,7 @@ class PromptCheckRunner:
             test_specific_params_dict = current_test_case_model_cfg.parameters.model_dump(exclude_none=True)
             resolved_params_dict.update(test_specific_params_dict)
         resolved_params = ModelConfigParameters(**resolved_params_dict)
-        return TestCaseModelConfig(
+        return ModelConfig(
             provider=provider_name_to_use,
             model_name=model_name_to_use,
             parameters=resolved_params
@@ -132,7 +132,7 @@ def execute_eval_run(config: PromptCheckConfig, all_test_cases: List[TestCase]) 
     typer.echo("--- Test Execution Finished ---")
 
     run_id = str(uuid.uuid4())
-    timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+    timestamp = datetime.datetime.now(timezone.utc).isoformat() + "Z"
     
     app_version = "0.0.0-dev"
     try:
