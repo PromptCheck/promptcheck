@@ -1,75 +1,57 @@
 import typer
 from pathlib import Path
 from typing import List, Optional
-import sys # For sys.exit
-import datetime # For json_filename
-import json # For writing json
+import sys 
+import datetime 
+import json 
 
-from evalloop.utils.file_handler import load_evalloop_config, ConfigFileLoadError, load_test_cases_from_yaml, TestFileLoadError
-from evalloop.core.runner import execute_eval_run # Import the new runner function
-from evalloop.core.schemas import RunOutput, TestCase # For type hinting
-
-# app = typer.Typer(name="run", help="Run an evaluation suite against your LLM prompts and models.") # REMOVED
+from promptcheck.utils.file_handler import load_promptcheck_config, ConfigFileLoadError, load_test_cases_from_yaml, TestFileLoadError
+from promptcheck.core.runner import execute_eval_run 
+from promptcheck.core.schemas import RunOutput, TestCase 
 
 DEFAULT_TESTS_DIR = "tests"
+CONFIG_FILENAME = "promptcheck.config.yaml"
 
-# @app.command() # REMOVED DECORATOR
 def run(
     config_path_cli: Path = typer.Option(
         Path("."), 
         "--config", "-c", 
-        help="Path to the directory containing evalloop.config.yaml, or path to the config file itself.",
-        exists=True,
-        resolve_path=True,
-        show_default="Current directory"
+        help=f"Path to the directory containing {CONFIG_FILENAME}, or path to the config file itself.",
+        exists=True, resolve_path=True, show_default="Current directory"
     ),
     test_files_or_dirs: Optional[List[Path]] = typer.Argument(
         None, 
         help="Paths to specific test YAML files or directories containing test YAML files. Defaults to the 'tests/' directory.",
-        exists=True,
-        resolve_path=True,
-        show_default="tests/ directory"
+        exists=True, resolve_path=True, show_default="tests/ directory"
     ),
     output_dir_cli: Path = typer.Option(
-        Path("."),
-        "--output-dir", "-o",
-        help="Directory to save the run.json results file.",
-        file_okay=False,
-        dir_okay=True,
-        writable=True,
-        resolve_path=True,
-        show_default="Current directory"
+        Path("."), "--output-dir", "-o",
+        help="Directory to save the run JSON results file.",
+        file_okay=False, dir_okay=True, writable=True, resolve_path=True, show_default="Current directory"
     ),
-    soft_fail: bool = typer.Option(
-        False,
-        "--soft-fail",
-        help="Exit with code 0 even if tests fail (but still report failures). Useful for CI steps that should not block a pipeline.",
-        show_default=False # Explicitly show False as default
-    )
-    # TODO: Add more options later, e.g., --tags, --verbose
+    soft_fail: bool = typer.Option(False, "--soft-fail", help="Exit with code 0 even if tests fail...", show_default=False)
 ):
     """
     Runs evaluation tests based on the provided configuration and test files.
     """
-    typer.echo("Starting EvalLoop run...")
+    typer.echo("Starting PromptCheck run...")
 
-    # Determine config directory
-    if config_path_cli.is_file() and config_path_cli.name == "evalloop.config.yaml":
+    if config_path_cli.is_file() and config_path_cli.name == CONFIG_FILENAME:
         config_dir = config_path_cli.parent
     elif config_path_cli.is_dir():
         config_dir = config_path_cli
     else:
-        typer.secho(f"Error: Invalid config path '{config_path_cli}'. Must be a directory or evalloop.config.yaml.", fg=typer.colors.RED)
+        typer.secho(f"Error: Invalid config path '{config_path_cli}'. Must be a directory or {CONFIG_FILENAME}.", fg=typer.colors.RED)
         raise typer.Exit(code=1)
 
-    # Load EvalLoop configuration
     try:
-        config = load_evalloop_config(config_dir)
-        typer.echo(f"Loaded configuration from: {config_dir / 'evalloop.config.yaml'}")
+        config = load_promptcheck_config(config_dir)
+        typer.echo(f"Loaded configuration from: {config_dir / CONFIG_FILENAME}")
     except ConfigFileLoadError as e:
         typer.secho(f"Error loading configuration: {e}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
     
+    # ... (file discovery logic unchanged) ...
     actual_test_files: List[Path] = []
     if not test_files_or_dirs:
         default_dir_path = Path.cwd() / DEFAULT_TESTS_DIR
@@ -120,7 +102,7 @@ def run(
     run_output_data: RunOutput = execute_eval_run(config, all_test_cases)
     
     output_dir_cli.mkdir(parents=True, exist_ok=True)
-    json_filename = f"evalloop_run_{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+    json_filename = f"promptcheck_run_{datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
     json_file_path = output_dir_cli / json_filename
 
     try:
@@ -128,10 +110,10 @@ def run(
             json_content = run_output_data.model_dump_json(indent=2)
             f.write(json_content)
         typer.echo(f"\nRun results saved to: {json_file_path}")
-    except AttributeError:
+    except AttributeError: 
         try:
             with open(json_file_path, "w") as f:
-                json_content = run_output_data.json(indent=2)
+                json_content = run_output_data.json(indent=2) # type: ignore
                 f.write(json_content)
             typer.echo(f"\nRun results saved to: {json_file_path} (using Pydantic V1 .json() method)")
         except Exception as e_v1:
@@ -139,20 +121,15 @@ def run(
     except Exception as e:
         typer.secho(f"Error writing JSON output: {e}", fg=typer.colors.RED)
 
-    typer.echo("\nEvalLoop run completed.")
+    typer.echo("\nPromptCheck run completed.")
 
     if run_output_data.total_tests_failed is not None and run_output_data.total_tests_failed > 0:
         typer.secho(f"{run_output_data.total_tests_failed} test(s) failed.", fg=typer.colors.RED)
         if not soft_fail:
-            sys.exit(1)
+            sys.exit(1) 
         else:
             typer.echo("Soft fail enabled: Exiting with code 0 despite test failures.")
             sys.exit(0)
     else:
         typer.secho("All tests executed passed (or had no failing thresholds defined).", fg=typer.colors.GREEN)
-        sys.exit(0)
-
-# if __name__ == "__main__": # This block might need adjustment if direct script execution is needed.
-    # temp_app = typer.Typer()
-    # temp_app.command("run")(run)
-    # temp_app()
+        sys.exit(0) 

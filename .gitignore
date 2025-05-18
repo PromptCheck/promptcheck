@@ -158,6 +158,6 @@ ehthumbs_vista.db
 .AppleDouble
 .LSOverride
 
-# EvalLoop specific
-evaloop.config.yaml
-evaloop_run_*.json
+# PromptCheck specific
+*.promptcheck_run.json
+promptcheck.config.yaml

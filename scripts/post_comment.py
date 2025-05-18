@@ -15,19 +15,16 @@ def main():
 
     if not json_file_path.exists():
         print(f"Error: JSON results file not found at {json_file_path}")
-        # Don't exit with error, as a soft-fail in evalloop might mean no file
-        # Or, if evalloop itself errored before creating file.
+        # Don't exit with error, as a soft-fail in promptcheck might mean no file
+        # Or, if promptcheck itself errored before creating file.
         # The GH Action step can continue, just no comment will be posted.
         print("No results JSON found, skipping comment.")
         return
 
     try:
         run_output_data = json.loads(json_file_path.read_text())
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON from {json_file_path}: {e}")
-        return # Exit gracefully
     except Exception as e:
-        print(f"Error reading file {json_file_path}: {e}")
+        print(f"Error processing PromptCheck results file {json_file_path}: {e}")
         return
 
     rows = [
@@ -75,7 +72,7 @@ def main():
 
     # Construct Markdown content
     md_body = textwrap.dedent(f"""
-    ### EvalLoop Test Results
+    ### PromptCheck Test Results
     {summary_line}
 
     {os.linesep.join(rows)}

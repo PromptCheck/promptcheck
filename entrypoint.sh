@@ -5,10 +5,10 @@ set -e # Exit immediately if a command exits with a non-zero status.
 # GitHub Actions sets inputs as environment variables with INPUT_ prefix
 # e.g., input `test_path` becomes `INPUT_TEST_PATH`
 
-echo "Starting EvalLoop Action..."
+echo "Starting PromptCheck Action..."
 
 # Ensure the 'run' subcommand is included and disable virtualenv creation for this run
-CMD="POETRY_VIRTUALENVS_CREATE=false poetry run evalloop run"
+CMD="POETRY_VIRTUALENVS_CREATE=false poetry run promptcheck run"
 
 # Config directory for the 'run' subcommand
 if [ -n "$INPUT_CONFIG_DIR" ]; then
@@ -35,8 +35,8 @@ fi
 if [ -n "$TEST_PATH_PARAM" ]; then
   CMD="$CMD $TEST_PATH_PARAM"
 else
-  # If no test path is given, evalloop run (the subcommand) will use its default (e.g. tests/)
-  echo "No explicit test_path input, evalloop run subcommand will use its default or fail if none found."
+  # If no test path is given, promptcheck run (the subcommand) will use its default (e.g. tests/)
+  echo "No explicit test_path input, promptcheck run subcommand will use its default or fail if none found."
 fi
 
 echo "Executing command: $CMD"
@@ -47,28 +47,28 @@ mkdir -p "$OUTPUT_DIR_PARAM"
 # Execute the command
 # Capture stdout to a file and also print to console
 # Also capture stderr
-OUTPUT_LOG="evalloop_action_stdout.log"
-ERROR_LOG="evalloop_action_stderr.log"
+OUTPUT_LOG="promptcheck_action_stdout.log"
+ERROR_LOG="promptcheck_action_stderr.log"
 
 # Ensure the command is executed in a way that $GITHUB_OUTPUT can be written to by the Python script
 # The Python script should handle writing to the path specified by the GITHUB_OUTPUT env var.
 # The GITHUB_OUTPUT env var is automatically available to steps in GitHub Actions.
 
 if eval "$CMD" > "$OUTPUT_LOG" 2> "$ERROR_LOG"; then
-  echo "EvalLoop run completed successfully."
+  echo "PromptCheck run completed successfully."
   cat "$OUTPUT_LOG"
   if [ -s "$ERROR_LOG" ]; then # if error log is not empty
-    echo "--- Errors/Warnings from EvalLoop --- "
+    echo "--- Errors/Warnings from PromptCheck --- "
     cat "$ERROR_LOG"
     echo "-------------------------------------"
   fi
 else
   EXIT_CODE=$?
-  echo "EvalLoop run failed with exit code $EXIT_CODE."
-  echo "--- Output from EvalLoop --- "
+  echo "PromptCheck run failed with exit code $EXIT_CODE."
+  echo "--- Output from PromptCheck --- "
   cat "$OUTPUT_LOG"
   echo "----------------------------"
-  echo "--- Errors from EvalLoop --- "
+  echo "--- Errors from PromptCheck --- "
   cat "$ERROR_LOG"
   echo "----------------------------"
   exit $EXIT_CODE
@@ -80,14 +80,14 @@ fi
 # and then write to the $GITHUB_OUTPUT file.
 
 # Example: Find the generated JSON file. 
-# This logic for finding the run.json file should ideally be more robust or handled by evalloop CLI providing the exact path.
-RUN_JSON_FILES=$(find "$OUTPUT_DIR_PARAM" -name 'evalloop_run_*.json' -print -quit) 
+# This logic for finding the run.json file should ideally be more robust or handled by promptcheck CLI providing the exact path.
+RUN_JSON_FILES=$(find "$OUTPUT_DIR_PARAM" -name 'promptcheck_run_*.json' -print -quit)
 
 if [ -n "$RUN_JSON_FILES" ]; then
   echo "Found run.json: $RUN_JSON_FILES"
   echo "run_json_path=$RUN_JSON_FILES" >> "$GITHUB_OUTPUT"
 else
-  echo "Warning: Could not find evalloop_run_*.json in $OUTPUT_DIR_PARAM for action output."
+  echo "Warning: Could not find promptcheck_run_*.json in $OUTPUT_DIR_PARAM for action output."
   echo "run_json_path=" >> "$GITHUB_OUTPUT"
 fi
 

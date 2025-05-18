@@ -1,30 +1,26 @@
-# EvalLoop
+# PromptCheck
 
-EvalLoop is a CI-first test harness for LLM prompts. It lets you write tests for GPT/Claude outputs, and automatically checks them in CI so you can catch prompt regressions early — before they reach users.
+PromptCheck is a CI-first test harness for LLM prompts. It lets you write tests for GPT/Claude outputs, and automatically checks them in CI so you can catch prompt regressions early — before they reach users.
 
-# EvalLoop is a **CI-first test harness for LLM prompts**.  
+# PromptCheck is a **CI-first test harness for LLM prompts**.  
 Write tests in YAML, gate pull-requests, and see pass/fail summaries posted as
 comments—so your prompts don't quietly regress.
 
-[![build](https://github.com/b00gn1sh/evalloop/actions/workflows/eval.yml/badge.svg)](https://github.com/b00gn1sh/evalloop/actions)
-[![PyPI](https://img.shields.io/pypi/v/evalloop.svg)](https://pypi.org/project/evalloop/)
-[![License](https://img.shields.io/github/license/b00gn1sh/evalloop.svg)](LICENSE)
+[![build](https://github.com/b00gn1sh/promptcheck/actions/workflows/eval.yml/badge.svg)](https://github.com/b00gn1sh/promptcheck/actions)
+[![PyPI](https://img.shields.io/pypi/v/promptcheck.svg)](https://pypi.org/project/promptcheck/)
+[![License](https://img.shields.io/github/license/b00gn1sh/promptcheck.svg)](LICENSE)
 
 ---
 
 ## 🚀 Install & Run
 
 ```bash
-pip install evalloop          # or: pip install evalloop[bleu]
-evaloop init                 # scaffolds config + tests/
-evaloop run                  # executes all *.yaml under tests/
+pip install promptcheck
+promptcheck init   # creates a config and test scaffold
+promptcheck run    # runs all prompt tests
 ```
 
----
-
-## Why Prompt Testing Matters
-
-LLMs can break without warning — even small prompt changes or model updates can cause major regressions. EvalLoop automates prompt evaluation like unit tests automate code quality, helping you ensure consistency and reliability in your AI applications.
+> **Need full example?** See [`example/`](example/) or the [Quick-Start Guide](docs/quickstart.md).
 
 ---
 
@@ -36,9 +32,15 @@ Ready to dive in?
 
 ---
 
-## What does EvalLoop do? Key Concepts in Automated LLM Evaluation
+## Why Prompt Testing Matters
 
-When you tweak a prompt, swap models, or refactor your agent code, **EvalLoop** runs a battery of tests in CI (Rouge, regex, token-cost, latency, etc.) and fails the pull-request if quality regresses or cost spikes.
+LLMs can break without warning — even small prompt changes or model updates can cause major regressions. PromptCheck automates prompt evaluation like unit tests automate code quality.
+
+---
+
+## What does PromptCheck do? Key Concepts in Automated LLM Evaluation
+
+When you tweak a prompt, swap models, or refactor your agent code, **PromptCheck** runs a battery of tests in CI (Rouge, regex, token-cost, latency, etc.) and fails the pull-request if quality regresses or cost spikes.
 
 Think **pytest + coverage**, but for LLM output.
 
@@ -63,7 +65,7 @@ Think **pytest + coverage**, but for LLM output.
 
 ## What it looks like
 
-![EvalLoop PR Comment](docs/img/evalloop_pr_comment.gif)
+![PromptCheck PR Comment](docs/img/promptcheck_pr_comment.gif)
 
 ---
 
@@ -113,10 +115,10 @@ Add more cases in `tests/`. Thresholds (like `value` for latency, or `f_score` f
 
 ```bash
 # From PyPI (once 0.1.0+ is live)
-# pip install evalloop
+# pip install promptcheck
 
 # With optional BLEU metric (requires NLTK)
-# pip install evalloop[bleu]
+# pip install promptcheck[bleu]
 
 # For development:
 poetry install # Installs base dependencies
@@ -171,13 +173,13 @@ git push origin v<new_version_例えば_0.1.0>
 
 1.  Fork & clone the repository.
 2.  Set up your development environment: `poetry install --extras bleu` (to include all deps).
-3.  Run tests locally: `poetry run evalloop run tests/` (or a specific file). Keep it green!
+3.  Run tests locally: `poetry run promptcheck run tests/` (or a specific file). Keep it green!
 4.  Make your changes, add tests for new features.
 5.  Open a Pull Request.
 
 ### Feedback & Questions
 
-Found an issue or have a question? We'd love to hear from you! Please [open an issue](https://github.com/b00gn1sh/evalloop/issues) or start a [discussion](https://github.com/b00gn1sh/evalloop/discussions).
+Found an issue or have a question? We'd love to hear from you! Please [open an issue](https://github.com/b00gn1sh/promptcheck/issues) or start a [discussion](https://github.com/b00gn1sh/promptcheck/discussions).
 
 ---
 

@@ -1,4 +1,4 @@
-name: EvalLoop CI
+name: PromptCheck CI
 
 on:
   push:
@@ -10,8 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  evalloop_pr_check:
-    name: EvalLoop PR Check & Comment
+  promptcheck_pr_check:
+    name: PromptCheck PR Check & Comment
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,20 +26,20 @@ jobs:
         with:
           python-version: '3.11'
       
-      - name: Install EvalLoop with BLEU from TestPyPI
+      - name: Install PromptCheck with BLEU from TestPyPI
         run: |
-          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "evalloop[bleu]==0.0.1a0"
-          # Using 0.0.1a0 as that's what was published to TestPyPI
+          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "promptcheck[bleu]==0.0.1a0"
+          # Using 0.0.1a0 as that's what was published to TestPyPI, adjust to promptcheck if it was re-published under new name
 
-      - name: Run EvalLoop
-        run: evalloop run --soft-fail --output-dir results tests/basic_example.yaml
+      - name: Run PromptCheck
+        run: promptcheck run --soft-fail --output-dir results tests/basic_example.yaml
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
-      - name: Post PR Comment with Results
+      - name: Post PR Comment with PromptCheck Results
         if: github.event_name == 'pull_request'
-        run: python scripts/post_comment.py results/evalloop_run_*.json
+        run: python scripts/post_comment.py results/promptcheck_run_*.json
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.number }}
@@ -52,10 +52,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version || '3.11' }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version || '3.11' }}
+          python-version: '3.11'
       
       - name: Install Poetry
         run: pip install poetry==1.8.3
@@ -69,8 +69,9 @@ jobs:
       - name: Run Pytest
         run: poetry run pytest tests/
 
+# Commented-out test_pypi_package job removed.
   # test_pypi_package: # Temporary job removed
-  #   name: Test EvalLoop from TestPyPI
+  #   name: Test PromptCheck from TestPyPI
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout repository code (for test files and example config)
@@ -81,29 +82,29 @@ jobs:
   #         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
   #       run: |
   #         echo "Preparing config file for test run..."
-  #         if [ -f evalloop.config.yaml.example ]; then
-  #           cp evalloop.config.yaml.example evalloop.config.yaml
-  #           echo "Copied evalloop.config.yaml.example to evalloop.config.yaml"
+  #         if [ -f promptcheck.config.yaml.example ]; then
+  #           cp promptcheck.config.yaml.example promptcheck.config.yaml
+  #           echo "Copied promptcheck.config.yaml.example to promptcheck.config.yaml"
   #         else
-  #           echo "Warning: evalloop.config.yaml.example not found!"
-  #           echo "api_keys:" > evalloop.config.yaml
-  #           echo "  openrouter: YOUR_KEY_FROM_ENV" >> evalloop.config.yaml
+  #           echo "Warning: promptcheck.config.yaml.example not found!"
+  #           echo "api_keys:" > promptcheck.config.yaml
+  #           echo "  openrouter: YOUR_KEY_FROM_ENV" >> promptcheck.config.yaml
   #         fi
   #
   #         echo "FROM python:3.11-slim" > Dockerfile.testpypi
-  #         echo "RUN pip install --no-cache-dir --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple evalloop==0.0.1a0" >> Dockerfile.testpypi
+  #         echo "RUN pip install --no-cache-dir --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple promptcheck==0.0.1a0" >> Dockerfile.testpypi
   #         echo "WORKDIR /github/workspace" >> Dockerfile.testpypi
-  #         echo "COPY evalloop.config.yaml /github/workspace/evalloop.config.yaml" >> Dockerfile.testpypi
+  #         echo "COPY promptcheck.config.yaml /github/workspace/promptcheck.config.yaml" >> Dockerfile.testpypi
   #         echo "COPY tests /github/workspace/tests" >> Dockerfile.testpypi
-  #         echo "ENTRYPOINT [\"evalloop\", \"run\", \"--config\", \"evalloop.config.yaml\", \"tests/basic_example.yaml\"]" >> Dockerfile.testpypi
+  #         echo "ENTRYPOINT [\"promptcheck\", \"run\", \"--config\", \"promptcheck.config.yaml\", \"tests/basic_example.yaml\"]" >> Dockerfile.testpypi
   #
   #         echo "--- Generated Dockerfile.testpypi --- "
   #         cat Dockerfile.testpypi
   #         echo "------------------------------------"
   #         
-  #         DOCKER_BUILDKIT=0 docker build -t evalloop-testpypi-img -f Dockerfile.testpypi .
+  #         DOCKER_BUILDKIT=0 docker build -t promptcheck-testpypi-img -f Dockerfile.testpypi .
   #         
   #         echo "Running the container..."
   #         docker run --rm \
   #           -e OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
-  #           evalloop-testpypi-img 
+  #           promptcheck-testpypi-img 

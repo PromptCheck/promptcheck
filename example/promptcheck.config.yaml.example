@@ -1,9 +1,9 @@
-# evalloop.config.yaml.example
+# PromptCheck Configuration Example
 
 # Default model to use if not specified in a test case
 default_model:
   provider: "openrouter" # or "openai", "groq"
-  model_name: "google/gemini-flash-1.5-latest" # Or any other preferred default, e.g., "mistralai/mistral-7b-instruct"
+  model_name: "google/gemini-flash-1.5-latest" # Or any other preferred default
 
 # API key configurations
 # It's often better to use environment variables for API keys (see docs and .bashrc or .zshrc examples)

@@ -1,4 +1,4 @@
-# evalloop.config.yaml.example
+# promptcheck.config.yaml.example
 
 # Default model to use if not specified in a test case
 default_model:

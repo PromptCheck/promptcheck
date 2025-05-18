@@ -24,15 +24,15 @@
       # No threshold for cost in this example; it will just be reported.
       # OpenRouter may provide cost via headers for some models.
 
-  model_config: # Configuration for the LLM to be used for this test case
-    provider: "openrouter" # Specifies the LLM provider (e.g., "openai", "groq", "openrouter")
-    # Using a commonly available free-tier model on OpenRouter.
-    # Requires OPENROUTER_API_KEY in environment or evalloop.config.yaml.
-    model_name: "mistralai/mistral-7b-instruct" # Specific model name for the provider
-    parameters: # LLM call parameters (provider-specific)
-      temperature: 0.7 # Controls randomness (0.0 to 2.0)
-      max_tokens: 50   # Maximum number of tokens to generate in the completion
-      timeout_s: 25.0  # Per-attempt timeout for the API call in seconds
-      retry_attempts: 2 # Number of retry attempts for the API call
+  case_model_config:
+    provider: "openrouter"
+    model_name: "mistralai/mistral-7b-instruct" # Free model for testing
+    # model_name: "google/gemini-flash-1.5" # Also free
+    parameters:
+      temperature: 0.7
+      max_tokens: 50
+      # timeout_s: 10 # Example of overriding provider default
+      # retry_attempts: 1 # Example of overriding provider default
+  # Requires OPENROUTER_API_KEY in environment or promptcheck.config.yaml.
 
   tags: ["openrouter", "free_model", "basic_example", "greeting"] # Optional tags for filtering/grouping tests 

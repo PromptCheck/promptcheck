@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
 
-from evalloop.core.schemas import TestCase, EvalLoopConfig, InputData, ExpectedOutput, MetricConfig, ModelConfig
-from evalloop.core.runner import execute_eval_run
+from promptcheck.core.schemas import TestCase, PromptCheckConfig, InputData, ExpectedOutput, MetricConfig, ModelConfig
+from promptcheck.core.runner import execute_eval_run
 
 # S3.2: tests/test_runner_basic.py
 def test_single_exact_match(tmp_path: Path):
@@ -19,8 +19,8 @@ def test_single_exact_match(tmp_path: Path):
         # model_config={"provider": "dummy", "model_name": "dummy/1"} # This would also work due to alias
     )
     
-    # Use a default EvalLoopConfig; API keys are not needed for DummyProvider
-    config = EvalLoopConfig()
+    # Use a default PromptCheckConfig; API keys are not needed for DummyProvider
+    config = PromptCheckConfig()
     
     # The execute_eval_run function expects a list of TestCase objects
     run_result = execute_eval_run(config, [test_case])

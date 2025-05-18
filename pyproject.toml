@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "evalloop"
+name = "promptcheck"
 version = "0.0.1a1"
-description = "EvalLoop: CI for LLM Evals"
+description = "PromptCheck: CI for LLM Evals"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-packages = [{include = "evalloop", from = "src"}]
+packages = [{include = "promptcheck", from = "src"}]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
@@ -21,7 +21,7 @@ nltk = {version = ">=3.9.1,<4.0.0", optional = true}
 bleu = ["nltk"]
 
 [tool.poetry.scripts]
-evalloop = "evalloop.main:app"
+promptcheck = "promptcheck.main:app"
 
 [tool.poetry.group.dev.dependencies]
 twine = "^6.1.0"

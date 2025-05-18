@@ -1,0 +1,77 @@
+{
+  "run_id": "efcbe878-754b-46d1-8370-90608f9816ef",
+  "run_timestamp_utc": "2025-05-15T00:31:41.709425Z",
+  "promptcheck_version": "0.1.0",
+  "total_tests_configured": 1,
+  "total_tests_executed": 1,
+  "total_tests_passed": 1,
+  "total_tests_failed": 0,
+  "test_results": [
+    {
+      "test_case_id": "openrouter_greet_test_001",
+      "test_case_name": "OpenRouter Basic Greeting Test",
+      "test_case_description": "Tests a basic greeting prompt using a free model on OpenRouter (Mistral 7B Instruct).",
+      "prompt_sent": "Briefly introduce yourself and greet the user.",
+      "llm_text_output": " Hello there! I'm an assistant designed to help answer your questions, provide information, and engage in conversational topics. How can I assist you today? I'm here to make your experience as smooth and enjoyable as possible. Let's",
+      "llm_prompt_tokens": 17,
+      "llm_completion_tokens": 50,
+      "llm_total_tokens": 67,
+      "llm_cost": null,
+      "llm_latency_ms": 2915.4860973358154,
+      "llm_model_name_used": "mistralai/mistral-7b-instruct",
+      "llm_error": null,
+      "metrics": [
+        {
+          "metric_name": "regex_match",
+          "score": true,
+          "passed": true,
+          "details": {
+            "pattern": ".+",
+            "actual_text": " Hello there! I'm an assistant designed to help answer your questions, provide information, and engage in conversational topics. How can I assist you today? I'm here to make your experience as smooth and enjoyable as possible. Let's",
+            "match_found": true
+          },
+          "error": null
+        },
+        {
+          "metric_name": "token_count",
+          "score": {
+            "completion_tokens": 50,
+            "total_tokens": 67
+          },
+          "passed": true,
+          "details": {
+            "count_types_reported": [
+              "completion_tokens",
+              "total_tokens"
+            ]
+          },
+          "error": null
+        },
+        {
+          "metric_name": "latency",
+          "score": 2915.4860973358154,
+          "passed": true,
+          "details": {
+            "unit": "ms"
+          },
+          "error": null
+        },
+        {
+          "metric_name": "cost",
+          "score": 0.00011700000000000001,
+          "passed": true,
+          "details": {
+            "unit": "USD",
+            "source": "calculated",
+            "prompt_tokens": 17,
+            "completion_tokens": 50,
+            "input_cost_per_1k": 0.001,
+            "output_cost_per_1k": 0.002
+          },
+          "error": null
+        }
+      ],
+      "overall_test_passed": true
+    }
+  ]
+} 

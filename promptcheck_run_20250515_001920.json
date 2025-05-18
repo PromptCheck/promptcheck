@@ -1,0 +1,56 @@
+{
+  "run_id": "5679e71e-2bbd-449a-ba20-c6bc05c2690c",
+  "run_timestamp_utc": "2025-05-15T00:19:20.540672Z",
+  "promptcheck_version": "0.1.0",
+  "total_tests_configured": 1,
+  "total_tests_executed": 1,
+  "total_tests_passed": 0,
+  "total_tests_failed": 1,
+  "test_results": [
+    {
+      "test_case_id": "openrouter_greet_test_001",
+      "test_case_name": "OpenRouter Basic Greeting Test",
+      "test_case_description": "Tests a basic greeting prompt using a free model on OpenRouter (Mistral 7B Instruct).",
+      "prompt_sent": "Briefly introduce yourself and greet the user.",
+      "llm_text_output": null,
+      "llm_prompt_tokens": null,
+      "llm_completion_tokens": null,
+      "llm_total_tokens": null,
+      "llm_cost": null,
+      "llm_latency_ms": null,
+      "llm_model_name_used": "mistralai/mistral-7b-instruct",
+      "llm_error": "LLM call ultimately failed after 2 attempts for test 'OpenRouter Basic Greeting Test': RetryError - RetryError[<Future at 0x10df36c50 state=finished raised AuthenticationError>]",
+      "metrics": [
+        {
+          "metric_name": "regex_match",
+          "score": false,
+          "passed": false,
+          "details": null,
+          "error": "Cannot calculate regex_match due to LLM call error: LLM call ultimately failed after 2 attempts for test 'OpenRouter Basic Greeting Test': RetryError - RetryError[<Future at 0x10df36c50 state=finished raised AuthenticationError>]"
+        },
+        {
+          "metric_name": "token_count",
+          "score": {},
+          "passed": false,
+          "details": null,
+          "error": "Cannot report token counts due to LLM call error: LLM call ultimately failed after 2 attempts for test 'OpenRouter Basic Greeting Test': RetryError - RetryError[<Future at 0x10df36c50 state=finished raised AuthenticationError>]"
+        },
+        {
+          "metric_name": "latency",
+          "score": -1.0,
+          "passed": false,
+          "details": null,
+          "error": "Cannot report latency due to LLM call error: LLM call ultimately failed after 2 attempts for test 'OpenRouter Basic Greeting Test': RetryError - RetryError[<Future at 0x10df36c50 state=finished raised AuthenticationError>]"
+        },
+        {
+          "metric_name": "cost",
+          "score": -1.0,
+          "passed": false,
+          "details": null,
+          "error": "Cannot calculate cost due to LLM call error: LLM call ultimately failed after 2 attempts for test 'OpenRouter Basic Greeting Test': RetryError - RetryError[<Future at 0x10df36c50 state=finished raised AuthenticationError>]"
+        }
+      ],
+      "overall_test_passed": false
+    }
+  ]
+} 
