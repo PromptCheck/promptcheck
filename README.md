@@ -8,11 +8,11 @@ comments—so your prompts don't quietly regress.
 
 [![build](https://github.com/b00gn1sh/promptcheck/actions/workflows/eval.yml/badge.svg)](https://github.com/b00gn1sh/promptcheck/actions)
 [![PyPI](https://img.shields.io/pypi/v/promptcheck.svg)](https://pypi.org/project/promptcheck/)
-[![License](https://img.shields.io/github/license/b00gn1sh/promptcheck.svg)](LICENSE)
+![License: BSL-1.1](https://img.shields.io/badge/license-BSL--1.1-blue)
 
 ---
 
-## 🚀 Install & Run
+## �� Install & Run
 
 ```bash
 pip install promptcheck
@@ -185,7 +185,8 @@ Found an issue or have a question? We'd love to hear from you! Please [open an i
 
 ## License
 
-MIT
+**License:** Business Source License 1.1  
+PromptCheck is free to use for evaluation and non-production use. For commercial licenses, [contact us](mailto:support@promptcheckllm.com).
 
 --- 
 

@@ -49,10 +49,16 @@ PromptCheck can post test results to your pull requests, so you catch GPT or Cla
 
     Your `promptcheck run` output will look something like this:
 
-    ![PR Comment](../img/promptcheck_pr_comment.gif) <!-- Placeholder: Path was docs/img/evalloop_pr_comment.gif, now promptcheck_pr_comment.gif (file missing) -->
+    ![PR Comment](../img/promptcheck_pr_comment.gif) <!-- Placeholder: Path was docs/img/promptcheck_pr_comment.gif (file missing) -->
 
     This provides a clear summary of which tests passed or failed, along with key metrics.
 
 Need more examples or advanced configurations? 
 *   Check the [`example/`](../example/) directory in the PromptCheck repository.
 *   For detailed configuration of test cases and metrics, see the [YAML Reference](yaml_reference.md) (Coming Soon!).
+
+## GitHub Action in Action
+
+![PR Comment](../img/promptcheck_pr_comment.gif) <!-- Placeholder: Path was docs/img/promptcheck_pr_comment.gif (file missing) -->
+
+When a Pull Request is opened, PromptCheck automatically runs your tests and posts a summary comment:
