@@ -12,7 +12,7 @@ comments—so your prompts don't quietly regress.
 
 ---
 
-## �� Install & Run
+## Install & Run
 
 ```bash
 pip install promptcheck
@@ -20,15 +20,15 @@ promptcheck init   # creates a config and test scaffold
 promptcheck run    # runs all prompt tests
 ```
 
-> **Need full example?** See [`example/`](example/) or the [Quick-Start Guide](docs/quickstart.md).
+> **Need full example?** See [`example/`](https://github.com/PromptCheck/promptcheck/tree/main/example) or the [Quick-Start Guide](https://github.com/PromptCheck/promptcheck/blob/main/docs/quickstart.md).
 
 ---
 
 ## Get Started
 
 Ready to dive in? 
-*   See a basic test example in the [`example/`](example/) directory.
-*   Follow our [Quick-Start Guide](docs/quickstart.md) for step-by-step setup instructions.
+*   See a basic test example in the [`example/`](https://github.com/PromptCheck/promptcheck/tree/main/example) directory.
+*   Follow our [Quick-Start Guide](https://github.com/PromptCheck/promptcheck/blob/main/docs/quickstart.md) for step-by-step setup instructions.
 
 ---
 
@@ -65,7 +65,7 @@ Think **pytest + coverage**, but for LLM output.
 
 ## What it looks like
 
-![PromptCheck PR Comment](docs/img/promptcheck_pr_comment.gif)
+![PromptCheck PR Comment](https://raw.githubusercontent.com/PromptCheck/promptcheck/main/docs/img/promptcheck_pr_comment.gif)
 
 ---
 
@@ -156,7 +156,7 @@ git push origin v<new_version_例えば_0.1.0>
 
 ## Documentation
 
-📖 **Docs:** [Quick-Start Guide](docs/quickstart.md) · [YAML Reference](docs/yaml_reference.md) (Coming Soon!)
+📖 **Docs:** [Quick-Start Guide](https://github.com/PromptCheck/promptcheck/blob/main/docs/quickstart.md) · [YAML Reference](docs/yaml_reference.md) (Coming Soon!)
 
 ---
 
