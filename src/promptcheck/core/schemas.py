@@ -8,6 +8,10 @@ class MetricType(str, Enum):
     TOKEN_COUNT = "token_count"
     LATENCY = "latency"
     REGEX = "regex"
+    COST = "cost"
+    ROUGE_L_F1 = "rouge_l_f1"
+    ROUGE = "rouge_l_f1"  # Alias for common usage, maps to specific ROUGE type
+    BLEU = "bleu"
     # Add other metric types as needed (e.g., "rouge", "embedding_similarity", etc.)
 
 class MetricThreshold(BaseModel):

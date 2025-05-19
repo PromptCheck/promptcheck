@@ -15,7 +15,7 @@
     regex_pattern: ".+" # Matches any non-empty string. Crude, but makes the test pass.
 
   metric_configs:
-    - metric: "regex_match" 
+    - metric: "regex"
       # No threshold needed if we just want to see if it ran and matched the loose regex.
     - metric: "token_count"
       parameters:
