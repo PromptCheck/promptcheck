@@ -83,10 +83,10 @@ class PromptCheckRunner:
                 test_case_overall_passed = False
         if current_llm_response:
             for mc_config_obj in test_case.metric_configs:
-                metric_calculator = get_metric_calculator(mc_config_obj.metric, mc_config_obj.model_dump(exclude_none=True))
+                metric_calculator = get_metric_calculator(mc_config_obj.metric.value, mc_config_obj.model_dump(exclude_none=True))
                 if not metric_calculator:
-                    typer.secho(f"    Warning: Metric calculator for '{mc_config_obj.metric}' not found. Skipping metric.", fg=typer.colors.YELLOW)
-                    actual_metric_outputs.append(MetricOutput(metric_name=mc_config_obj.metric, score="N/A", error="Calculator not found"))
+                    typer.secho(f"    Warning: Metric calculator for '{mc_config_obj.metric.value}' not found. Skipping metric.", fg=typer.colors.YELLOW)
+                    actual_metric_outputs.append(MetricOutput(metric_name=mc_config_obj.metric.value, score="N/A", error="Calculator not found"))
                     continue
                 metric_result: MetricResult = metric_calculator.calculate(test_case, current_llm_response)
                 actual_metric_outputs.append(MetricOutput(**metric_result.model_dump()))

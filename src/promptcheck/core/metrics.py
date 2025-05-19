@@ -174,7 +174,7 @@ if __name__ == '__main__':
 import re # For RegexMatchMetric
 
 class RegexMatchMetric(Metric):
-    metric_name = "regex_match"
+    metric_name = "regex"
 
     def __init__(self, metric_config: Dict[str, Any]):
         super().__init__(metric_config)
