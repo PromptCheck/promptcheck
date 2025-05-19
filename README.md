@@ -131,7 +131,7 @@ poetry install --extras bleu # Installs with BLEU support
 ```bash
 # 1. Ensure tests pass and docs are updated
 # 2. Bump version in pyproject.toml
-poetry version <new_version_例えば_0.1.0>  # e.g., 0.1.0, 0.2.0b1
+poetry version <new_version>  # e.g., 0.1.0, 0.2.0b1
 
 # 3. Build the package
 poetry build
@@ -147,8 +147,8 @@ poetry publish -r testpypi
 poetry publish
 
 # 7. Tag the release in Git
-git tag v<new_version_例えば_0.1.0> # e.g., v0.1.0
-git push origin v<new_version_例えば_0.1.0>
+git tag v<new_version>        # e.g., v0.1.0
+git push origin v<new_version>
 ```
 
 ---
