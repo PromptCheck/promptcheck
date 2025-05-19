@@ -57,7 +57,6 @@ Think **pytest + coverage**, but for LLM output.
 | Feature | Free | Pro |
 |---------|:----:|:---:|
 | CLI & GitHub Action | ✅ | ✅ |
-| 30-day result history | ✅ | ✅ |
 | Unlimited history & charts | — | ✅ |
 | Slack alerts | — | ✅ |
 
