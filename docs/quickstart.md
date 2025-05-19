@@ -39,7 +39,7 @@ PromptCheck tests are defined in simple YAML files. We'll create a YAML test fil
 
 ### Run in CI with GitHub Actions
 
-PromptCheck can post test results to your pull requests, so you catch GPT or Claude output changes before merging.
+PromptCheck can post test results to your pull requests, so you catch LLM output changes (from providers like OpenAI, Anthropic, Groq, OpenRouter, etc.) before merging.
 
 5.  **Add to GitHub CI**
     *   Copy the example workflow file from the PromptCheck repository (`example/.github/workflows/promptcheck_example.yml`) to your project's `.github/workflows/` directory.

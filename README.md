@@ -1,6 +1,6 @@
 # PromptCheck
 
-PromptCheck is a CI-first test harness for LLM prompts. It lets you write tests for GPT/Claude outputs, and automatically checks them in CI so you can catch prompt regressions early — before they reach users.
+PromptCheck is a CI-first test harness for LLM prompts. It lets you write tests for outputs from **GPT, Claude, Mistral, or any other LLM**, and automatically checks them in CI so you can catch prompt regressions early — before they reach users. PromptCheck works with any LLM provider, including OpenAI, Anthropic, and open-source models via Groq, OpenRouter, or local APIs.
 
 # PromptCheck is a **CI-first test harness for LLM prompts**.  
 Write tests in YAML, gate pull-requests, and see pass/fail summaries posted as
@@ -49,7 +49,7 @@ Think **pytest + coverage**, but for LLM output.
 ## Key Features for Effective LLM Testing
 
 *   **Easy setup** — drop a YAML test file, add the GitHub Action, done.
-*   **Multi‑provider** — OpenAI, Groq, OpenRouter (more soon).
+*   **Multi‑provider** — Works with OpenAI, Anthropic, Groq, OpenRouter, or any model you connect via API (more built-in providers coming soon).
 *   **Metrics out‑of‑the‑box** — exact/regex match, ROUGE‑L, BLEU (optional), token‑count, latency, cost.
 *   **Readable reports** — Action log output and (coming soon) PR comment bot. `run.json` artifact produced.
 *   **Fast to extend** — write your own metric in <30 lines (standard Python).
