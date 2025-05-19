@@ -26,10 +26,9 @@ jobs:
         with:
           python-version: '3.11'
       
-      - name: Install PromptCheck with BLEU from TestPyPI
+      - name: Install PromptCheck with BLEU from local source
         run: |
-          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "promptcheck[bleu]==0.0.1a0"
-          # Using 0.0.1a0 as that's what was published to TestPyPI, adjust to promptcheck if it was re-published under new name
+          pip install .[bleu]
 
       - name: Run PromptCheck
         run: promptcheck run --soft-fail --output-dir results tests/basic_example.yaml
