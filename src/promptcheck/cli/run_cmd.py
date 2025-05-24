@@ -4,6 +4,7 @@ from typing import List, Optional
 import sys 
 import datetime 
 import json 
+import requests
 
 from promptcheck.utils.file_handler import load_promptcheck_config, ConfigFileLoadError, load_test_cases_from_yaml, TestFileLoadError
 from promptcheck.core.runner import execute_eval_run 
@@ -29,7 +30,11 @@ def run(
         help="Directory to save the run JSON results file.",
         file_okay=False, dir_okay=True, writable=True, resolve_path=True, show_default="Current directory"
     ),
-    soft_fail: bool = typer.Option(False, "--soft-fail", help="Exit with code 0 even if tests fail...", show_default=False)
+    soft_fail: bool = typer.Option(False, "--soft-fail", help="Exit with code 0 even if tests fail...", show_default=False),
+    dashboard_url: Optional[str] = typer.Option(
+        None, "--dashboard-url", envvar="PROMPTCHECK_DASH_URL",
+        help="POST run summary JSON to this dashboard base URL"
+    )
 ):
     """
     Runs evaluation tests based on the provided configuration and test files.
@@ -122,6 +127,27 @@ def run(
         typer.secho(f"Error writing JSON output: {e}", fg=typer.colors.RED)
 
     typer.echo("\nPromptCheck run completed.")
+
+    # Dashboard push logic
+    if dashboard_url:
+        try:
+            total = run_output_data.total_tests_executed
+            failed = run_output_data.total_tests_failed or 0
+            latencies = [r.llm_latency_ms for r in run_output_data.test_results if r.llm_latency_ms is not None]
+            avg_latency = round(sum(latencies) / len(latencies) / 1000, 3) if latencies else 0.0
+            costs = [r.llm_cost for r in run_output_data.test_results if r.llm_cost is not None]
+            total_cost = round(sum(costs), 5) if costs else 0.0
+            summary_payload = {
+                "total_tests": total,
+                "failed_tests": failed,
+                "avg_latency": avg_latency,
+                "total_cost": total_cost
+            }
+            resp = requests.post(f"{dashboard_url.rstrip('/')}/runs", json=summary_payload, timeout=3)
+            resp.raise_for_status()
+            typer.echo(f"Pushed summary to dashboard (id={resp.json().get('id')})")
+        except Exception as e:
+            typer.secho(f"Dashboard push failed: {e}", fg=typer.colors.RED)
 
     if run_output_data.total_tests_failed is not None and run_output_data.total_tests_failed > 0:
         typer.secho(f"{run_output_data.total_tests_failed} test(s) failed.", fg=typer.colors.RED)

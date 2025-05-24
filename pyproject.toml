@@ -16,6 +16,7 @@ groq = "^0.24.0"
 rouge-score = "^0.1.2"
 tenacity = "^9.1.2"
 nltk = {version = ">=3.9.1,<4.0.0", optional = true}
+requests = "^2.31.0"
 
 [tool.poetry.extras]
 bleu = ["nltk"]
