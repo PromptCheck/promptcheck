@@ -1,0 +1,20 @@
+# failing_math.yaml
+# Demonstrates a failing test using dummy provider where expected output will not match
+
+- id: "failing_math_test_001"  # Unique identifier for this test case
+  name: "Failing math test with dummy provider"
+  description: "Expects '5' for 'What is 2+2?', but dummy provider returns 'Hello world'."
+  type: "llm_generation"
+
+  input_data:
+    prompt: "What is 2+2?"
+
+  expected_output:
+    exact_match_string: "5"
+
+  metric_configs:
+    - metric: "exact_match"
+
+  model_config:
+    provider: "dummy"
+    model_name: "dummy-model-v1" 
