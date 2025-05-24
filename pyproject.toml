@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptcheck"
-version = "0.1.0b1"
+version = "0.1.0b6"
 description = "CI-first prompt testing framework for LLMs"
 authors = ["PromptCheck Labs <support@promptcheckllm.com>"]
 readme = "README.md"
